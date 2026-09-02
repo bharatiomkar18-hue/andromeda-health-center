@@ -1,66 +1,63 @@
-// netlify/functions/save-report.js
-//
-// POST /.netlify/functions/save-report?type=1100|fraud|rm
-// Body: the raw file bytes (CSV text or XLSX binary), sent as-is (no JSON wrapping,
-// no base64) to avoid inflating large files. Metadata travels in query params/headers.
-//
-// Stores the file under a fixed key per report type in the "andromeda-reports" Blobs
-// store, so every visitor to the site sees the same, most-recently-uploaded data -
-// this is the "stored & visible to everyone" requirement. Overwrites any previous
-// upload of the same type (last upload wins), matching the dashboard's existing
-// "re-upload replaces" behavior for RM Mapping.
-
 import { getStore } from '@netlify/blobs';
 
 const VALID_TYPES = new Set(['1100', 'fraud', 'rm']);
+const STORE_NAME = 'andromeda-reports';
+const CHUNK_BYTES = 3 * 1024 * 1024;
+const MAX_PARTS = 500;
 
-export default async (request, context) => {
-  if (request.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
-  }
+function json(body, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+}
+
+export default async (request) => {
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+
+  const expected = process.env.UPLOAD_PASSWORD;
+  if (!expected) return json({ error: 'UPLOAD_PASSWORD is not configured for Functions.' }, 500);
+  const supplied = request.headers.get('x-upload-password') || '';
+  if (supplied !== expected) return json({ error: 'Wrong upload password.' }, 401);
 
   const url = new URL(request.url);
   const type = url.searchParams.get('type');
-  const filename = url.searchParams.get('filename') || 'upload';
-
-  if (!VALID_TYPES.has(type)) {
-    return new Response(JSON.stringify({ error: `Invalid or missing "type" query param. Must be one of: ${[...VALID_TYPES].join(', ')}` }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+  const action = url.searchParams.get('action') || 'part';
+  if (!VALID_TYPES.has(type)) return json({ error: 'Invalid report type.' }, 400);
 
   try {
-    const bytes = await request.arrayBuffer();
-    if (!bytes || bytes.byteLength === 0) {
-      return new Response(JSON.stringify({ error: 'Empty request body - no file data received.' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    const store = getStore({ name: STORE_NAME, consistency: 'strong' });
+    const manifestKey = 'report-' + type + '-manifest';
+    const current = await store.get(manifestKey, { type: 'json' });
+    const targetSlot = current && current.slot === 'a' ? 'b' : 'a';
+
+    if (action === 'part') {
+      const part = Number(url.searchParams.get('part'));
+      if (!Number.isInteger(part) || part < 0 || part >= MAX_PARTS) return json({ error: 'Invalid part number.' }, 400);
+      const bytes = await request.arrayBuffer();
+      if (!bytes.byteLength) return json({ error: 'Empty upload part.' }, 400);
+      if (bytes.byteLength > CHUNK_BYTES) return json({ error: 'Upload part is too large.' }, 413);
+      await store.set('report-' + type + '-' + targetSlot + '-part-' + part, bytes);
+      return json({ ok: true, part, sizeBytes: bytes.byteLength });
     }
 
-    const store = getStore('andromeda-reports');
-    await store.set(`report-${type}`, bytes, {
-      metadata: {
-        filename,
-        uploadedAt: new Date().toISOString(),
-        sizeBytes: bytes.byteLength,
-      },
-    });
+    if (action === 'finalize') {
+      const parts = Number(url.searchParams.get('parts'));
+      const sizeBytes = Number(url.searchParams.get('sizeBytes'));
+      const filename = (url.searchParams.get('filename') || 'upload').slice(0, 300);
+      if (!Number.isInteger(parts) || parts < 1 || parts > MAX_PARTS) return json({ error: 'Invalid part count.' }, 400);
+      if (!Number.isFinite(sizeBytes) || sizeBytes < 1) return json({ error: 'Invalid file size.' }, 400);
+      for (let part = 0; part < parts; part += 1) {
+        const meta = await store.getMetadata('report-' + type + '-' + targetSlot + '-part-' + part);
+        if (!meta) return json({ error: 'Upload is incomplete; part ' + (part + 1) + ' of ' + parts + ' is missing.' }, 409);
+      }
+      const manifest = { type, filename, uploadedAt: new Date().toISOString(), sizeBytes, parts, chunkBytes: CHUNK_BYTES, slot: targetSlot };
+      await store.setJSON(manifestKey, manifest);
+      return json({ ok: true, ...manifest });
+    }
 
-    return new Response(JSON.stringify({ ok: true, type, filename, sizeBytes: bytes.byteLength }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return json({ error: 'Invalid upload action.' }, 400);
   } catch (err) {
     console.error('[save-report] failed:', err);
-    return new Response(JSON.stringify({ error: 'Failed to save report: ' + err.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return json({ error: 'Failed to save report: ' + (err?.message || String(err)) }, 500);
   }
 };
 
-export const config = {
-  path: '/.netlify/functions/save-report',
-};
+export const config = { path: '/.netlify/functions/save-report' };
