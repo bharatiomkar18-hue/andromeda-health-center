@@ -1,0 +1,1992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Control &middot; LM Breach Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['"Space Grotesk"', 'sans-serif'],
+          body: ['Inter', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'monospace'],
+        },
+        colors: {
+          canvas:  '#F7F8FA',
+          surface: '#FFFFFF',
+          surface2:'#F1F3F6',
+          edge:    '#E3E6EC',
+          ink:     '#111827',
+          mute:    '#6B7280',
+          brand:   '#2563EB',
+          ontime:  '#0F9D8A',
+          fm:      '#D97706',
+          mm:      '#7C3AED',
+          lm:      '#DC2626',
+          validc:  '#0F9D8A',
+          invalidc:'#DC2626',
+        },
+      }
+    }
+  }
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', sans-serif; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #cbd2dd; border-radius: 8px; }
+  @keyframes pulseDot {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(15,157,138,0.45); }
+    70% { box-shadow: 0 0 0 6px rgba(15,157,138,0); }
+  }
+  .live-dot { animation: pulseDot 2s infinite; }
+  .segbar-seg { transition: flex-basis 0.6s cubic-bezier(.4,0,.2,1); }
+  .th-sort:hover .sort-arrow { opacity: 1; }
+  .sort-arrow { opacity: 0.25; transition: opacity .15s; }
+  .fade-in { animation: fadeIn .3s ease both; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(4px);} to {opacity:1; transform:none;} }
+  .quickbtn.active { background: #2563EB; color: #fff; }
+  .row-clickable:hover { background: #F1F3F6; cursor: pointer; }
+</style>
+</head>
+<body class="bg-canvas text-ink font-body min-h-screen">
+
+<!-- ============================== TOP BAR ============================== -->
+<header class="sticky top-0 z-40 border-b border-edge bg-surface/95 backdrop-blur">
+  <div class="max-w-[1760px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4 flex-wrap">
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="w-9 h-9 rounded-lg bg-brand flex items-center justify-center shrink-0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v10H3z"/><path d="M14 10h4l3 3v4h-7z"/><circle cx="7" cy="19" r="1.6"/><circle cx="18" cy="19" r="1.6"/></svg>
+      </div>
+      <div class="min-w-0">
+        <h1 class="font-display font-semibold text-[15px] sm:text-base leading-tight truncate">Network Control</h1>
+        <p class="text-[11px] text-mute leading-tight -mt-0.5">FM &middot; MM &middot; LM breach monitor</p>
+      </div>
+      <span class="hidden sm:inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-full border border-fm/30 bg-fm/10 text-fm font-medium ml-2">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="10" width="16" height="10" rx="1.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        Restricted access
+      </span>
+    </div>
+
+    <div class="flex items-center gap-2 shrink-0 flex-wrap">
+      <span id="fileNameTag" class="hidden lg:inline-flex items-center gap-1.5 text-xs text-mute font-mono max-w-[180px] truncate"></span>
+
+      <button id="unlock1100Btn" class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg bg-brand text-white hover:brightness-110 transition">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="1.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        1100 Report
+      </button>
+      <button id="unlockFraudBtn" class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border border-edge text-mute hover:text-ink hover:border-brand/50 transition">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="1.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        Fraud Attempt Report
+      </button>
+      <button id="unlockRMBtn" class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border border-edge text-mute hover:text-ink hover:border-brand/50 transition">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="1.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        RM Mapping
+      </button>
+
+      <input id="fileInput1100" type="file" accept=".xlsx,.xls,.csv" class="hidden">
+      <input id="fileInputFraud" type="file" accept=".xlsx,.xls,.csv" class="hidden">
+      <input id="fileInputRM" type="file" accept=".xlsx,.xls,.csv" class="hidden">
+
+      <button id="sampleBtn" class="hidden xl:inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg border border-edge text-mute hover:text-ink hover:border-brand/50 transition">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+        Sample
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ============================== FILTER BAR ============================== -->
+<div id="filterBar" class="hidden sticky top-[57px] z-30 border-b border-edge bg-surface2/90 backdrop-blur">
+  <div class="max-w-[1760px] mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap items-center gap-2">
+    <div class="flex items-center gap-1 bg-surface border border-edge rounded-lg p-0.5 text-[11px]">
+      <button data-quick="today" class="quickbtn px-2.5 py-1.5 rounded-md font-medium text-mute hover:text-ink">Today</button>
+      <button data-quick="7d" class="quickbtn px-2.5 py-1.5 rounded-md font-medium text-mute hover:text-ink">Last 7 Days</button>
+      <button data-quick="mtd" class="quickbtn px-2.5 py-1.5 rounded-md font-medium text-mute hover:text-ink">MTD</button>
+    </div>
+    <div class="flex items-center gap-1.5 bg-surface border border-edge rounded-lg px-2.5 py-1.5">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-mute shrink-0"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      <span class="text-[11px] text-mute hidden sm:inline">DSE from</span>
+      <input type="date" id="dseStart" class="bg-transparent text-xs outline-none w-[118px] text-ink">
+      <span class="text-mute text-xs">&rarr;</span>
+      <input type="date" id="dseEnd" class="bg-transparent text-xs outline-none w-[118px] text-ink">
+    </div>
+    <select id="territoryFilter" class="text-xs bg-surface border border-edge rounded-lg px-2.5 py-2 outline-none text-ink max-w-[150px]">
+      <option value="__all__">All Territories</option>
+    </select>
+    <select id="hubFilter" class="text-xs bg-surface border border-edge rounded-lg px-2.5 py-2 outline-none text-ink max-w-[160px]">
+      <option value="__all__">All Hubs</option>
+    </select>
+    <select id="rmFilter" class="text-xs bg-surface border border-edge rounded-lg px-2.5 py-2 outline-none text-ink max-w-[150px]">
+      <option value="__all__">All RMs</option>
+    </select>
+    <div class="flex items-center gap-1.5 bg-surface border border-edge rounded-lg px-2.5 py-1.5 flex-1 min-w-[130px] max-w-[200px]">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-mute shrink-0"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="tableSearch" type="text" placeholder="Search&hellip;" class="bg-transparent text-xs outline-none w-full text-ink placeholder:text-mute">
+    </div>
+    <button id="resetFilters" class="text-[11px] px-2.5 py-2 rounded-lg text-mute hover:text-lm border border-transparent hover:border-lm/30 transition">Reset</button>
+    <span id="scopeCount" class="ml-auto text-[11px] text-mute font-mono whitespace-nowrap"></span>
+  </div>
+</div>
+
+<!-- ============================== PASSWORD MODAL ============================== -->
+<div id="passwordModal" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
+  <div class="bg-surface border border-edge rounded-xl p-6 w-full max-w-sm shadow-2xl">
+    <div class="w-11 h-11 rounded-lg bg-fm/10 flex items-center justify-center mb-4">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-fm"><rect x="4" y="10" width="16" height="10" rx="1.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+    </div>
+    <h3 id="pwModalTitle" class="font-display font-semibold text-base mb-1">Restricted upload</h3>
+    <p class="text-xs text-mute mb-4">Enter the password to upload this file.</p>
+    <input id="pwInput" type="password" placeholder="Password" class="w-full text-sm bg-surface2 border border-edge rounded-lg px-3 py-2.5 outline-none focus:border-brand/60 mb-2 text-ink">
+    <p id="pwError" class="hidden text-xs text-lm mb-2">Incorrect password. Try again.</p>
+    <div class="flex gap-2 mt-3">
+      <button id="pwCancel" class="flex-1 text-sm px-3 py-2.5 rounded-lg border border-edge text-mute hover:text-ink transition">Cancel</button>
+      <button id="pwSubmit" class="flex-1 text-sm px-3 py-2.5 rounded-lg bg-brand text-white font-medium hover:brightness-110 transition">Unlock</button>
+    </div>
+    <p class="text-[10px] text-mute mt-4 leading-relaxed">This is a basic access gate for this file, not encryption &mdash; anyone with the file itself can view its source.</p>
+  </div>
+</div>
+
+<!-- ============================== DRILL-DOWN MODAL ============================== -->
+<div id="drillModal" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
+  <div class="bg-surface border border-edge rounded-xl w-full max-w-5xl max-h-[85vh] flex flex-col shadow-2xl">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-edge">
+      <div>
+        <h3 id="drillTitle" class="font-display font-semibold text-base">Drill-down</h3>
+        <p id="drillSubtitle" class="text-xs text-mute mt-0.5"></p>
+      </div>
+      <button id="drillClose" class="w-8 h-8 rounded-lg hover:bg-surface2 flex items-center justify-center text-mute hover:text-ink transition">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="overflow-auto flex-1">
+      <table class="w-full text-xs">
+        <thead class="sticky top-0 bg-surface2">
+          <tr class="text-[10.5px] uppercase tracking-wide text-mute border-b border-edge">
+            <th class="px-4 py-2.5 text-left font-medium">AWB No</th>
+            <th class="px-3 py-2.5 text-left font-medium">Status</th>
+            <th class="px-3 py-2.5 text-left font-medium">Bucket</th>
+            <th class="px-3 py-2.5 text-left font-medium">Detail Tag</th>
+            <th class="px-3 py-2.5 text-left font-medium">Hub</th>
+            <th class="px-3 py-2.5 text-left font-medium">Territory</th>
+            <th class="px-3 py-2.5 text-left font-medium">RM</th>
+            <th class="px-3 py-2.5 text-left font-medium">DSE</th>
+          </tr>
+        </thead>
+        <tbody id="drillBody" class="divide-y divide-edge"></tbody>
+      </table>
+    </div>
+    <div class="px-5 py-3 border-t border-edge text-[11px] text-mute" id="drillFooter"></div>
+  </div>
+</div>
+
+<!-- ============================== EMPTY STATE ============================== -->
+<div id="emptyState" class="max-w-2xl mx-auto px-6 py-24 text-center">
+  <div class="w-16 h-16 mx-auto rounded-2xl bg-surface border border-edge flex items-center justify-center mb-5">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="text-brand"><path d="M3 7h11v10H3z"/><path d="M14 10h4l3 3v4h-7z"/><circle cx="7" cy="19" r="1.6"/><circle cx="18" cy="19" r="1.6"/></svg>
+  </div>
+  <h2 class="font-display text-xl font-semibold mb-2">Restricted &mdash; upload the 1100 report to begin</h2>
+  <p class="text-sm text-mute leading-relaxed mb-6">Upload the password-protected 1100 report to start. Optionally add the Fraud Attempt Report (for Valid/Invalid LM%) and RM Mapping (for RM attribution) afterward. Everything is parsed and analyzed entirely in this browser tab.</p>
+  <div class="flex items-center justify-center gap-3 flex-wrap">
+    <button id="unlock1100Btn2" class="inline-flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg bg-brand text-white hover:brightness-110 transition">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="1.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      Upload 1100 Report
+    </button>
+    <button id="sampleBtn2" class="text-sm px-4 py-2.5 rounded-lg border border-edge text-mute hover:text-ink transition">Try sample data</button>
+  </div>
+  <p id="libLoadError" class="hidden mt-5 text-xs text-fm bg-fm/10 border border-fm/25 rounded-lg px-4 py-3 text-left whitespace-pre-line"></p>
+  <p id="parseError" class="hidden mt-5 text-xs text-lm bg-lm/10 border border-lm/25 rounded-lg px-4 py-3 text-left whitespace-pre-line"></p>
+</div>
+
+<div id="processingOverlay" class="hidden fixed inset-0 z-50 bg-white/70 backdrop-blur-sm flex items-center justify-center">
+  <div class="bg-surface border border-edge rounded-xl px-6 py-5 flex items-center gap-3 shadow-xl">
+    <svg class="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2a10 10 0 0 1 10 10" class="text-brand"/></svg>
+    <div>
+      <p class="text-sm font-medium">Processing&hellip;</p>
+      <p id="processingDetail" class="text-[11px] text-mute mt-0.5">This can take a moment for large files.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== MAIN ============================== -->
+<main id="mainContent" class="hidden max-w-[1760px] mx-auto px-4 sm:px-6 py-6 space-y-5">
+
+  <div class="flex items-center gap-1 bg-surface2 border border-edge rounded-lg p-0.5 text-sm w-fit">
+    <button id="tabDashboardBtn" class="px-4 py-1.5 rounded-md font-medium bg-brand text-white transition">Dashboard</button>
+    <button id="tabRationaleBtn" class="px-4 py-1.5 rounded-md font-medium text-mute hover:text-ink transition">Rationale</button>
+  </div>
+
+  <div id="dashboardTabContent" class="space-y-5">
+
+  <div id="dataNotice" class="hidden text-xs rounded-lg border border-brand/25 bg-brand/5 text-ink px-4 py-2.5"></div>
+
+  <!-- KPI CARDS -->
+  <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+    <div class="rounded-xl border border-edge bg-surface p-4 fade-in">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[11px] uppercase tracking-wide text-mute font-medium">Shipments in scope</span>
+      </div>
+      <div class="flex items-end justify-between">
+        <span id="kpiTotal" class="font-display text-2xl sm:text-[26px] font-semibold leading-none">&mdash;</span>
+        <span id="kpiTotalTrend" class="text-[11px] font-mono"></span>
+      </div>
+      <p class="text-[11px] text-mute mt-1.5">Network-arrived, promise-dated</p>
+    </div>
+    <div class="rounded-xl border border-edge bg-surface p-4 fade-in">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[11px] uppercase tracking-wide text-mute font-medium">Overall breach %</span>
+      </div>
+      <div class="flex items-end justify-between">
+        <span id="kpiBreach" class="font-display text-2xl sm:text-[26px] font-semibold leading-none text-lm">&mdash;</span>
+        <span id="kpiBreachTrend" class="text-[11px] font-mono"></span>
+      </div>
+      <p class="text-[11px] text-mute mt-1.5">Missed customer promise date</p>
+    </div>
+    <div class="rounded-xl border border-edge bg-surface p-4 fade-in">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[11px] uppercase tracking-wide text-mute font-medium">Valid LM breach %</span>
+      </div>
+      <div class="flex items-end justify-between">
+        <span id="kpiValidLM" class="font-display text-2xl sm:text-[26px] font-semibold leading-none text-validc">&mdash;</span>
+        <span id="kpiValidLMTrend" class="text-[11px] font-mono"></span>
+      </div>
+      <p class="text-[11px] text-mute mt-1.5">Genuine attempt made, still breached</p>
+    </div>
+    <div class="rounded-xl border border-edge bg-surface p-4 fade-in">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[11px] uppercase tracking-wide text-mute font-medium">Invalid LM breach %</span>
+      </div>
+      <div class="flex items-end justify-between">
+        <span id="kpiInvalidLM" class="font-display text-2xl sm:text-[26px] font-semibold leading-none text-invalidc">&mdash;</span>
+        <span id="kpiInvalidLMTrend" class="text-[11px] font-mono"></span>
+      </div>
+      <p class="text-[11px] text-mute mt-1.5">Fake/fraudulent attempt logged</p>
+    </div>
+  </section>
+
+  <!-- HEALTH STRIP -->
+  <section class="rounded-xl border border-edge bg-surface p-4 sm:p-5 fade-in">
+    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-ontime live-dot"></span>
+        <h3 class="text-xs font-semibold uppercase tracking-wide text-mute">Network health &mdash; attribution mix</h3>
+      </div>
+      <span id="asOfStamp" class="text-[11px] font-mono text-mute"></span>
+    </div>
+    <div id="healthStrip" class="w-full h-8 rounded-md overflow-hidden flex bg-surface2 border border-edge"></div>
+    <div id="healthLegend" class="flex flex-wrap gap-x-5 gap-y-1.5 mt-3 text-[11px]"></div>
+  </section>
+
+  <!-- SINGLE DYNAMIC CHART -->
+  <section class="rounded-xl border border-edge bg-surface p-4 sm:p-5 fade-in">
+    <div class="flex items-center justify-between mb-3 flex-wrap gap-3">
+      <h3 class="text-xs font-semibold uppercase tracking-wide text-mute">Trend by Delivery Slot End date</h3>
+      <div class="flex items-center gap-2">
+        <span class="text-[11px] text-mute">Metric:</span>
+        <select id="kpiPicker" class="text-xs bg-surface2 border border-edge rounded-lg px-2.5 py-1.5 outline-none text-ink">
+          <option value="overallPct">Overall Breach %</option>
+          <option value="fmPct">FM Breach %</option>
+          <option value="mmPct">MM Breach %</option>
+          <option value="lmPct">LM Breach %</option>
+          <option value="validLmPct">Valid LM Breach %</option>
+          <option value="invalidLmPct">Invalid LM Breach %</option>
+          <option value="onTimePct">On-Time %</option>
+          <option value="dsrPct">DSR %</option>
+          <option value="dotPct">DOT %</option>
+          <option value="rotPct">ROT %</option>
+          <option value="aotPct">AOT %</option>
+          <option value="fddsPct">FDDS %</option>
+        </select>
+      </div>
+    </div>
+    <p class="text-[11px] text-mute mb-2">Filtered by the Territory / Hub / RM selections above &middot; bars show volume, line shows the selected metric</p>
+    <div class="h-[300px]"><canvas id="trendChart"></canvas></div>
+  </section>
+
+  <!-- PERFORMANCE TABLE -->
+  <section class="rounded-xl border border-edge bg-surface fade-in overflow-hidden">
+    <div class="flex items-center justify-between p-4 sm:p-5 pb-3 flex-wrap gap-3">
+      <div>
+        <h3 id="tableTitle" class="text-sm font-semibold">Territory performance</h3>
+        <p class="text-[11px] text-mute mt-0.5">Click a row to drill down to tracking-ID level &middot; click a column header to sort</p>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex items-center bg-surface2 border border-edge rounded-lg p-0.5 text-xs">
+          <button id="levelTerritoryBtn" class="px-3 py-1.5 rounded-md font-medium bg-brand text-white transition">By territory</button>
+          <button id="levelHubBtn" class="px-3 py-1.5 rounded-md font-medium text-mute hover:text-ink transition">By hub</button>
+        </div>
+        <label class="flex items-center gap-1.5 text-xs text-mute cursor-pointer select-none px-1">
+          <input type="checkbox" id="subtotalsToggle" class="accent-brand">
+          Sub-totals by RM
+        </label>
+        <button id="exportExcelBtn" class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-edge text-mute hover:text-ink hover:border-brand/50 transition">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export to Excel
+        </button>
+        <span id="tableCount" class="text-[11px] text-mute font-mono whitespace-nowrap"></span>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-y border-edge text-[11px] uppercase tracking-wide text-mute">
+            <th data-key="name" class="th-sort cursor-pointer px-4 sm:px-5 py-2.5 text-left font-medium whitespace-nowrap"><span id="colNamePrimary">Territory</span> <span class="sort-arrow">&darr;</span></th>
+            <th id="colTerritoryHeader" class="hidden px-3 py-2.5 text-left font-medium whitespace-nowrap">Territory</th>
+            <th data-key="rm" class="th-sort cursor-pointer px-3 py-2.5 text-left font-medium whitespace-nowrap">RM <span class="sort-arrow">&darr;</span></th>
+            <th data-key="count" class="th-sort cursor-pointer px-3 py-2.5 text-right font-medium whitespace-nowrap">Count <span class="sort-arrow">&darr;</span></th>
+            <th data-key="aot" class="th-sort cursor-pointer px-3 py-2.5 text-right font-medium whitespace-nowrap">AOT% <span class="sort-arrow">&darr;</span></th>
+            <th data-key="dotrot" class="th-sort cursor-pointer px-3 py-2.5 text-right font-medium whitespace-nowrap">DOT+ROT% <span class="sort-arrow">&darr;</span></th>
+            <th data-key="dot" class="th-sort cursor-pointer px-3 py-2.5 text-right font-medium whitespace-nowrap">DOT% <span class="sort-arrow">&darr;</span></th>
+            <th data-key="rot" class="th-sort cursor-pointer px-3 py-2.5 text-right font-medium whitespace-nowrap">ROT% <span class="sort-arrow">&darr;</span></th>
+            <th data-key="dsr" class="th-sort cursor-pointer px-3 py-2.5 text-right font-medium whitespace-nowrap">DSR% <span class="sort-arrow">&darr;</span></th>
+            <th data-key="fdds" class="th-sort cursor-pointer px-3 py-2.5 text-right font-medium whitespace-nowrap">FDDS% <span class="sort-arrow">&darr;</span></th>
+            <th data-key="fmPct" class="th-sort cursor-pointer px-3 py-2.5 text-right font-medium whitespace-nowrap">FM% <span class="sort-arrow">&darr;</span></th>
+            <th data-key="mmPct" class="th-sort cursor-pointer px-3 py-2.5 text-right font-medium whitespace-nowrap">MM% <span class="sort-arrow">&darr;</span></th>
+            <th data-key="lmPct" class="th-sort cursor-pointer px-3 py-2.5 text-right font-medium whitespace-nowrap">LM% <span class="sort-arrow">&darr;</span></th>
+            <th data-key="validLm" class="th-sort cursor-pointer px-3 py-2.5 text-right font-medium whitespace-nowrap">Valid LM% <span class="sort-arrow">&darr;</span></th>
+            <th data-key="invalidLm" class="th-sort cursor-pointer px-3 sm:px-5 py-2.5 text-right font-medium whitespace-nowrap">Invalid LM% <span class="sort-arrow">&darr;</span></th>
+          </tr>
+        </thead>
+        <tbody id="perfTableBody" class="divide-y divide-edge"></tbody>
+      </table>
+    </div>
+    <div class="flex items-center justify-between px-4 sm:px-5 py-3 border-t border-edge flex-wrap gap-2">
+      <span id="pageInfo" class="text-[11px] text-mute"></span>
+      <div class="flex items-center gap-2">
+        <button id="prevPage" class="text-xs px-3 py-1.5 rounded-lg border border-edge disabled:opacity-30 hover:border-brand/50 transition">Prev</button>
+        <button id="nextPage" class="text-xs px-3 py-1.5 rounded-lg border border-edge disabled:opacity-30 hover:border-brand/50 transition">Next</button>
+      </div>
+    </div>
+    <div class="px-4 sm:px-5 pb-4 pt-1 text-[10.5px] text-mute leading-relaxed border-t border-edge">
+      <span class="font-semibold">AOT%</span> = any LM action on/before DSE &middot;
+      <span class="font-semibold">DOT%/ROT%</span> = delivered/rejected on/before DSE (strict) &middot;
+      <span class="font-semibold">DSR%</span> = delivered ever, regardless of DSE timing &middot;
+      <span class="font-semibold">FDDS%</span> = delivered with zero prior failed attempts &middot;
+      <span class="font-semibold">Valid LM%</span> = LM breaches with a genuine delivery attempt (see Fraud Attempt Report) &middot;
+      <span class="font-semibold">Invalid LM%</span> = LM breaches where the attempt was fake/fraudulent.
+    </div>
+  </section>
+
+  <p class="text-center text-[11px] text-mute pb-4">All parsing and computation happens locally in this browser tab &mdash; no data is uploaded anywhere.</p>
+  </div>
+
+  <div id="rationaleTabContent" class="hidden space-y-5">
+    <section class="rounded-xl border border-edge bg-surface p-5 sm:p-6">
+      <h2 class="font-display text-lg font-semibold mb-1">Calculation Rationale</h2>
+      <p class="text-xs text-mute mb-4">Every metric on the Dashboard tab, defined exactly as computed. This is the same logic implemented in code &mdash; nothing here is simplified or approximate.</p>
+      <div class="flex flex-wrap gap-2 text-xs">
+        <a href="#rat-scope" class="px-2.5 py-1 rounded-lg bg-surface2 hover:bg-edge transition">Scope &amp; data prep</a>
+        <a href="#rat-outcome" class="px-2.5 py-1 rounded-lg bg-surface2 hover:bg-edge transition">Delivery outcome</a>
+        <a href="#rat-cascade" class="px-2.5 py-1 rounded-lg bg-surface2 hover:bg-edge transition">FM/MM/LM cascade</a>
+        <a href="#rat-lanes" class="px-2.5 py-1 rounded-lg bg-surface2 hover:bg-edge transition">Lane cutoff table</a>
+        <a href="#rat-metrics" class="px-2.5 py-1 rounded-lg bg-surface2 hover:bg-edge transition">AOT / DOT / ROT / DSR / FDDS</a>
+        <a href="#rat-fraud" class="px-2.5 py-1 rounded-lg bg-surface2 hover:bg-edge transition">Valid / Invalid LM%</a>
+        <a href="#rat-rm" class="px-2.5 py-1 rounded-lg bg-surface2 hover:bg-edge transition">RM mapping</a>
+        <a href="#rat-privacy" class="px-2.5 py-1 rounded-lg bg-surface2 hover:bg-edge transition">Data handling</a>
+      </div>
+    </section>
+
+    <section id="rat-scope" class="rounded-xl border border-edge bg-surface p-5 sm:p-6">
+      <h3 class="font-display font-semibold text-base mb-3">1. Scope &amp; data preparation</h3>
+      <div class="space-y-2 text-sm text-ink leading-relaxed">
+        <p><span class="font-semibold">Deduplication</span> &mdash; rows are grouped by AWB No (trimmed to a string); within each group, only the row with the latest <code class="bg-surface2 px-1 rounded text-xs">modified</code> timestamp is kept. Rows with a blank AWB No are dropped and counted separately.</p>
+        <p><span class="font-semibold">Pickup-pending exclusion</span> &mdash; any shipment with a blank <code class="bg-surface2 px-1 rounded text-xs">Network Arrival Date</code> (i.e. not yet actually picked up) is removed entirely before any other calculation runs. These are never counted anywhere, not even as a separate bucket.</p>
+        <p><span class="font-semibold">Date parsing</span> &mdash; handles mixed formats in the same column (24-hour text, 12-hour AM/PM text, native Excel serial numbers, and verbose text like "August 4, 2026, 2:52 PM") without assuming a single fixed format.</p>
+        <p><span class="font-semibold">"DSE"</span> throughout this dashboard means <code class="bg-surface2 px-1 rounded text-xs">Delivery Slot End Timestamp</code> &mdash; the customer's promise date. Every breach, percentage, and filter is measured against it.</p>
+      </div>
+    </section>
+
+    <section id="rat-outcome" class="rounded-xl border border-edge bg-surface p-5 sm:p-6">
+      <h3 class="font-display font-semibold text-base mb-3">2. Delivery outcome classification</h3>
+      <p class="text-sm text-mute mb-2">Checked in this exact priority order, first match wins:</p>
+      <ol class="list-decimal list-inside text-sm text-ink space-y-1 leading-relaxed">
+        <li><code class="bg-surface2 px-1 rounded text-xs">Delivered Date</code> present &rarr; <span class="font-semibold">Delivered</span></li>
+        <li>else <code class="bg-surface2 px-1 rounded text-xs">Rejected</code> present &rarr; <span class="font-semibold">Rejected</span> (a resolved, terminal outcome &mdash; the customer refused delivery, it is not left as "still pending")</li>
+        <li>else Status is "Cancelled" &rarr; <span class="font-semibold">Cancelled</span></li>
+        <li>else Status is "Declared Lost" or "Loss Recovered" &rarr; <span class="font-semibold">Lost / Recovered</span></li>
+        <li>else &rarr; <span class="font-semibold">Pending / In-Progress</span></li>
+      </ol>
+      <p class="text-sm text-ink mt-3 leading-relaxed"><span class="font-semibold">Reference clock</span> &mdash; for a Terminal outcome (anything except Pending), the shipment's own <code class="bg-surface2 px-1 rounded text-xs">modified</code> timestamp is used to judge lateness. For a still-Pending shipment, the current time ("now") is used instead, so an overdue-but-open shipment correctly shows as an open breach rather than being silently ignored.</p>
+    </section>
+
+    <section id="rat-cascade" class="rounded-xl border border-edge bg-surface p-5 sm:p-6">
+      <h3 class="font-display font-semibold text-base mb-3">3. FM / MM / LM breach cascade</h3>
+      <p class="text-sm text-ink mb-3 leading-relaxed"><span class="font-semibold">Guiding principle:</span> a shipment only counts as breached if it genuinely failed to be resolved to the customer by DSE. Root-cause attribution (FM/MM/LM) only happens after that is established. Missing an internal deadline is not, by itself, a customer-facing failure &mdash; a team gets full credit for recovering.</p>
+      <p class="text-sm text-mute mb-2">Evaluated in this exact order, first match wins:</p>
+      <ol class="list-decimal list-inside text-sm text-ink space-y-1.5 leading-relaxed mb-3">
+        <li>No <code class="bg-surface2 px-1 rounded text-xs">Delivery Slot End Timestamp</code> at all &rarr; <span class="font-semibold">"No Promise Date Generated"</span> (excluded from every breach % denominator)</li>
+        <li>Reached LM on/before DSE <span class="font-semibold">and</span> delivered/rejected on/before DSE &rarr; <span class="font-semibold text-ontime">On Time</span></li>
+        <li>Has not reached LM yet, and DSE has not passed either &rarr; <span class="font-semibold text-ontime">On Time</span> (not yet due &mdash; not judged prematurely)</li>
+        <li>Reached LM on/before DSE, but never delivered or rejected &rarr; <span class="font-semibold text-lm">LM breach</span></li>
+        <li>Genuinely failed to reach LM in time <span class="font-semibold">and</span> the FM lane deadline was missed &rarr; <span class="font-semibold text-fm">FM breach</span></li>
+        <li>Genuinely failed to reach LM in time <span class="font-semibold">and</span> the FM lane deadline was <span class="italic">not</span> missed (or the lane isn't in the cutoff table) &rarr; <span class="font-semibold text-mm">MM breach</span></li>
+      </ol>
+      <div class="bg-surface2 rounded-lg p-3 text-sm text-ink leading-relaxed mb-3">
+        <span class="font-semibold">The "provision" (step 2 vs. steps 5/6):</span> if a shipment reached LM on/before DSE, everything that happens after that is entirely LM's responsibility &mdash; regardless of whether FM was individually late getting it there. FM/MM are only ever evaluated when the shipment genuinely never reached LM in time. A shipment that missed its own FM lane deadline but still made it to LM before DSE, and was delivered on time, counts as 100% <span class="font-semibold text-ontime">On Time</span> &mdash; this is deliberate, to give credit for recovery rather than double-punishing an ultimately successful delivery.
+      </div>
+      <div class="bg-surface2 rounded-lg p-3 text-sm text-ink leading-relaxed mb-3">
+        <span class="font-semibold">Why "delivered or rejected" and not "attempted":</span> an out-for-delivery dispatch or a failed attempt alone is not enough to avoid an LM breach &mdash; the customer still did not get a resolution. Only an actual delivery or a customer rejection counts as compliant.
+      </div>
+      <div class="bg-surface2 rounded-lg p-3 text-sm text-ink leading-relaxed">
+        <span class="font-semibold">Lane table is exclusive, no fallback:</span> only the 41 lanes in the cutoff table below are ever evaluated for an FM breach. A shipment on any other FM&rarr;LM lane pair gets no FM verdict at all &mdash; if it fails to reach LM in time, it is attributed to MM by default, since there is no lane-specific deadline to hold FM accountable to.
+      </div>
+      <p class="text-xs text-mute mt-3"><span class="font-semibold">Reconciliation guarantee:</span> FM Breaches + MM Breaches + LM Breaches always sums exactly to Overall Breaches, for the whole dataset and for every filtered slice. This is a mathematical property of the cascade above (each shipment lands in exactly one bucket), not a separately-maintained total.</p>
+    </section>
+
+    <section id="rat-lanes" class="rounded-xl border border-edge bg-surface p-5 sm:p-6">
+      <h3 class="font-display font-semibold text-base mb-3">4. Lane cutoff table (41 lanes)</h3>
+      <p class="text-sm text-mute mb-3 leading-relaxed">Each lane (FM Territory &rarr; LM Territory) has a fixed daily line-haul departure cutoff time-of-day. Given a shipment's actual pickup timestamp, its FM deadline is the <span class="italic">next</span> occurrence of that cutoff on/after pickup. City-name aliases: BANGALORE&rarr;BENGALURU, DELHI&rarr;DELHI NCR.</p>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead><tr class="text-left text-mute uppercase tracking-wide border-b border-edge"><th class="py-1.5 pr-4">Lane</th><th class="py-1.5 pr-4">Cutoff</th><th class="py-1.5 pr-4">Lane</th><th class="py-1.5">Cutoff</th></tr></thead>
+          <tbody id="rationaleLaneTable" class="divide-y divide-edge"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="rat-metrics" class="rounded-xl border border-edge bg-surface p-5 sm:p-6">
+      <h3 class="font-display font-semibold text-base mb-3">5. AOT% / DOT% / ROT% / DSR% / FDDS%</h3>
+      <div class="space-y-3 text-sm text-ink leading-relaxed">
+        <div><span class="font-semibold">AOT%</span> (Attempted On Time) &mdash; the earliest of Delivered Date, First Out On Road Date, and First Attempt Date falls on/before DSE. Measures whether <span class="italic">any</span> LM action happened on time, regardless of outcome.</div>
+        <div><span class="font-semibold">DOT%</span> (Delivered On Time) &mdash; Delivered Date is on/before DSE. Strict: no grace day, no credit for a late-but-eventual delivery.</div>
+        <div><span class="font-semibold">ROT%</span> (Rejected On Time) &mdash; Rejected date is on/before DSE. Same strictness as DOT%.</div>
+        <div><span class="font-semibold">DOT+ROT%</span> &mdash; the union of the two above (delivered <span class="italic">or</span> rejected on/before DSE).</div>
+        <div><span class="font-semibold">DSR%</span> (Delivery Success Rate) &mdash; Delivered Date is present at all, with <span class="italic">no</span> time constraint against DSE. Answers "did it ever get delivered," independent of timing.</div>
+        <div><span class="font-semibold">FDDS%</span> (First Delivery Done Success) &mdash; Delivered, with <code class="bg-surface2 px-1 rounded text-xs">Forward Attempted Count</code> equal to 0 (zero prior failed attempts). Shown as a percentage of total shipments in scope.</div>
+      </div>
+    </section>
+
+    <section id="rat-fraud" class="rounded-xl border border-edge bg-surface p-5 sm:p-6">
+      <h3 class="font-display font-semibold text-base mb-3">6. Valid LM% / Invalid LM% (Fraud Attempt classification)</h3>
+      <p class="text-sm text-ink mb-3 leading-relaxed">This is a sub-split of the LM Breach bucket only &mdash; it answers, for shipments already attributed to LM, whether the delivery attempt behind that breach was genuine or fraudulent, using the Fraud Attempt Report.</p>
+      <p class="text-sm text-mute mb-2">Per-attempt-row classification, checked in this order:</p>
+      <ol class="list-decimal list-inside text-sm text-ink space-y-1 leading-relaxed mb-3">
+        <li><code class="bg-surface2 px-1 rounded text-xs">con_at_distance_m</code> &gt; 70,000 &rarr; <span class="font-semibold text-validc">Valid</span>, tagged "Customer Issue" (an implausible GPS distance is treated as a data/GPS issue, not fraud)</li>
+        <li><code class="bg-surface2 px-1 rounded text-xs">fraud_status</code> is "Genuine" &rarr; <span class="font-semibold text-validc">Valid</span></li>
+        <li><code class="bg-surface2 px-1 rounded text-xs">fraud_status</code> is "Address Issue" &rarr; <span class="font-semibold text-validc">Valid</span> (an address problem is not a fraudulent attempt)</li>
+        <li><code class="bg-surface2 px-1 rounded text-xs">fraud_status</code> is "Fake - OR/AT under 30 min" or "Fake - AT under 500 m" <span class="italic">and</span> distance &lt; 1,000m &rarr; <span class="font-semibold text-validc">Valid</span> ("Genuine, distance override" &mdash; a small on-ground distance suggests the fake flag was a false positive)</li>
+        <li>anything else containing "fake" &rarr; <span class="font-semibold text-invalidc">Invalid</span></li>
+      </ol>
+      <div class="bg-surface2 rounded-lg p-3 text-sm text-ink leading-relaxed mb-3">
+        <span class="font-semibold">Per-shipment rule &mdash; only the most recent attempt decides:</span> a shipment's attempt rows are sorted by <code class="bg-surface2 px-1 rounded text-xs">at_time</code>; only the chronologically latest attempt's classification is used. Earlier attempts on the same tracking ID are superseded, not aggregated or OR'd together &mdash; a later Invalid attempt overrides an earlier Valid one, and vice versa.
+      </div>
+      <div class="bg-surface2 rounded-lg p-3 text-sm text-ink leading-relaxed">
+        <span class="font-semibold">No matching fraud-report record at all &rarr; defaults to Valid</span> (benefit of the doubt: no evidence of a fraudulent attempt exists for that AWB). This guarantees Valid LM% + Invalid LM% always exactly equals LM Breach% at any level of filtering &mdash; there is no third "unassessed" bucket.
+      </div>
+    </section>
+
+    <section id="rat-rm" class="rounded-xl border border-edge bg-surface p-5 sm:p-6">
+      <h3 class="font-display font-semibold text-base mb-3">7. RM mapping</h3>
+      <p class="text-sm text-ink leading-relaxed">Hub names are matched between the main report's <code class="bg-surface2 px-1 rounded text-xs">LM Station Name</code> and the RM Mapping file's <code class="bg-surface2 px-1 rounded text-xs">FACILITY NAME</code> after normalizing both (uppercase, hyphens/underscores/spaces collapsed to a single underscore) &mdash; this tolerates naming variants like <code class="bg-surface2 px-1 rounded text-xs">SW-NAG-Rahul-Nagar-AD</code> vs. <code class="bg-surface2 px-1 rounded text-xs">SW_NAG_Rahul_Nagar_AD</code>. Re-uploading an updated RM Mapping file fully replaces the current mapping (last upload wins) &mdash; useful for a hub addition or an RM reassignment.</p>
+    </section>
+
+    <section id="rat-privacy" class="rounded-xl border border-edge bg-surface p-5 sm:p-6">
+      <h3 class="font-display font-semibold text-base mb-3">8. Data handling</h3>
+      <p class="text-sm text-ink leading-relaxed">All parsing and computation happens locally in this browser tab. Nothing is uploaded to any server. The password gates on each upload button are a basic access control for this file, not encryption &mdash; anyone with the file itself can read the password from its source code.</p>
+    </section>
+  </div>
+
+</main>
+
+<script>
+/* ======================================================================
+   RESILIENT LIBRARY LOADING
+   ====================================================================== */
+function loadScript(url) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = url; s.onload = () => resolve(url); s.onerror = () => reject(new Error('failed: ' + url));
+    document.head.appendChild(s);
+  });
+}
+async function loadWithFallback(urls, checkFn, label) {
+  for (const url of urls) { try { await loadScript(url); if (checkFn()) return true; } catch (e) {} }
+  console.error(`[Breach Dashboard] Could not load ${label} from any CDN source.`);
+  return false;
+}
+const XLSX_SOURCES = [
+  'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+  'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+  'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js',
+];
+const CHARTJS_SOURCES = [
+  'https://cdnjs.cloudflare.com/ajax/libs/chart.js/4.4.4/chart.umd.min.js',
+  'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js',
+  'https://unpkg.com/chart.js@4.4.4/dist/chart.umd.min.js',
+];
+const EXCELJS_SOURCES = [
+  'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js',
+  'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js',
+  'https://unpkg.com/exceljs@4.4.0/dist/exceljs.min.js',
+];
+let excelJsLoadPromise = null;
+function ensureExcelJSLoaded() {
+  // Loaded on first actual use, not upfront - it's a large library and most visits
+  // never touch the export button.
+  if (typeof ExcelJS !== 'undefined') return Promise.resolve(true);
+  if (!excelJsLoadPromise) excelJsLoadPromise = loadWithFallback(EXCELJS_SOURCES, () => typeof ExcelJS !== 'undefined', 'ExcelJS');
+  return excelJsLoadPromise;
+}
+let LIBS_READY = false, LIBS_ERROR = null;
+(async function bootLibraries() {
+  const [xlsxOk, chartOk] = await Promise.all([
+    loadWithFallback(XLSX_SOURCES, () => typeof XLSX !== 'undefined', 'XLSX'),
+    loadWithFallback(CHARTJS_SOURCES, () => typeof Chart !== 'undefined', 'Chart.js'),
+  ]);
+  if (!xlsxOk || !chartOk) {
+    const missing = [!xlsxOk && 'file reading (XLSX)', !chartOk && 'charts (Chart.js)'].filter(Boolean).join(' and ');
+    LIBS_ERROR = `Could not load required libraries for ${missing} from any CDN source.`;
+    const el = document.getElementById('libLoadError');
+    if (el) { el.textContent = LIBS_ERROR; el.classList.remove('hidden'); }
+  }
+  LIBS_READY = xlsxOk && chartOk;
+})();
+</script>
+
+<script>
+/* ======================================================================
+   FM / MM / LM BREACH LOGIC (unchanged from the validated engine)
+   ====================================================================== */
+const CANCELLED_STATUSES = new Set(['Cancelled']);
+const LOST_STATUSES = new Set(['Declared Lost', 'Loss Recovered']);
+
+const LANE_SLA = {
+  'BENGALURU|CHENNAI': 86340, 'BENGALURU|HYDERABAD': 86340,
+  'DELHI NCR|JAIPUR': 7140, 'DELHI NCR|MEERUT': 7140, 'DELHI NCR|DEHRADUN': 7140,
+  'MUMBAI|AHMEDABAD': 86340, 'MUMBAI|SURAT': 86340, 'MUMBAI|PUNE': 86340,
+  'HYDERABAD|BENGALURU': 86340, 'CHENNAI|BENGALURU': 86340, 'JAIPUR|DELHI NCR': 86340,
+  'PUNE|MUMBAI': 86340, 'SURAT|MUMBAI': 86340, 'AHMEDABAD|MUMBAI': 86340,
+  'BENGALURU|MYSORE': 14400, 'BENGALURU|KOCHI': 61200, 'BENGALURU|COIMBATORE': 61200,
+  'DELHI NCR|CHANDIGARH': 7140, 'DELHI NCR|LUDHIANA': 7140, 'DELHI NCR|LUCKNOW': 7140,
+  'KOLKATA|PATNA': 68400, 'KOLKATA|BHUBANESWAR': 68400, 'KOLKATA|CUTTACK': 68400,
+  'MUMBAI|PANAJI': 32400, 'MUMBAI|VADODARA': 86340, 'MUMBAI|INDORE': 64800,
+  'MUMBAI|AURANGABAD': 64800, 'MUMBAI|NAGPUR': 64800,
+  'BENGALURU|DELHI NCR': 18000, 'BENGALURU|MUMBAI': 18000, 'BENGALURU|KOLKATA': 18000,
+  'DELHI NCR|BENGALURU': 54000, 'DELHI NCR|MUMBAI': 54000, 'DELHI NCR|KOLKATA': 54000,
+  'KOLKATA|DELHI NCR': 21600, 'KOLKATA|BENGALURU': 21600, 'KOLKATA|MUMBAI': 21600,
+  'MUMBAI|DELHI NCR': 14400, 'MUMBAI|BENGALURU': 14400, 'MUMBAI|KOLKATA': 14400,
+  'RAJKOT|AHMEDABAD': 86340,
+};
+const PLACE_ALIASES = { 'BANGALORE': 'BENGALURU', 'DELHI': 'DELHI NCR' };
+function normPlace(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const k = String(v).trim().toUpperCase();
+  return PLACE_ALIASES[k] || k;
+}
+function normHubKey(v) {
+  if (v === null || v === undefined || v === '') return null;
+  return String(v).trim().toUpperCase().replace(/[-_\s]+/g, '_');
+}
+
+const EXCEL_EPOCH = Date.UTC(1899, 11, 30);
+function excelSerialToDate(n) { return new Date(EXCEL_EPOCH + n * 86400000); }
+
+function parseFlexibleDate(v) {
+  if (v === null || v === undefined || v === '') return null;
+  if (v instanceof Date) return isNaN(v) ? null : v;
+  if (typeof v === 'number') return excelSerialToDate(v);
+  const s = String(v).trim();
+  if (!s) return null;
+  let m = s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?)?$/i);
+  if (m) {
+    let [, d, mo, y, h, mi, se, ap] = m;
+    d = +d; mo = +mo; y = +y; h = h ? +h : 0; mi = mi ? +mi : 0; se = se ? +se : 0;
+    if (ap) { const apu = ap.toUpperCase(); if (apu === 'PM' && h < 12) h += 12; if (apu === 'AM' && h === 12) h = 0; }
+    const dt = new Date(y, mo - 1, d, h, mi, se);
+    return isNaN(dt) ? null : dt;
+  }
+  const generic = new Date(s);
+  return isNaN(generic) ? null : generic;
+}
+function parseNumberLoose(v) {
+  if (v === null || v === undefined || v === '') return null;
+  if (typeof v === 'number') return v;
+  const s = String(v).replace(/,/g, '').trim();
+  if (!s) return null;
+  const n = parseFloat(s);
+  return isNaN(n) ? null : n;
+}
+
+function minDate(...dates) {
+  const valid = dates.filter(d => d instanceof Date && !isNaN(d));
+  if (!valid.length) return null;
+  return new Date(Math.min(...valid.map(d => d.getTime())));
+}
+function dayKey(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function fmtDay(d) { return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }); }
+
+function fmDeadline(pickupDate, fmTerritory, lmTerritory) {
+  const key = normPlace(fmTerritory) + '|' + normPlace(lmTerritory);
+  const cutoffSec = LANE_SLA[key];
+  if (cutoffSec === undefined || !pickupDate) return { deadline: null, hasLane: false };
+  const base = new Date(pickupDate); base.setHours(0, 0, 0, 0);
+  let candidate = new Date(base.getTime() + cutoffSec * 1000);
+  if (candidate < pickupDate) candidate = new Date(candidate.getTime() + 86400000);
+  return { deadline: candidate, hasLane: true };
+}
+
+function computeRow(row, AS_OF) {
+  const networkArrival = row._networkArrival, inTransit = row._inTransit, lmArrival = row._lmArrival;
+  const delivered = row._delivered, rejected = row._rejected, promise = row._promise, modified = row._modified;
+  const status = row['Status'];
+
+  let outcome;
+  if (delivered) outcome = 'Delivered';
+  else if (rejected) outcome = 'Rejected';
+  else if (CANCELLED_STATUSES.has(status)) outcome = 'Cancelled';
+  else if (LOST_STATUSES.has(status)) outcome = 'Lost / Recovered';
+  else outcome = 'Pending / In-Progress';
+  const terminal = outcome !== 'Pending / In-Progress';
+  const refClock = terminal ? (modified || AS_OF) : AS_OF;
+  row._outcome = outcome; row._terminal = terminal;
+
+  const lmActionDate = minDate(delivered, row._firstOutOnRoad, row._firstAttempt);
+  row._aot = !!(promise && lmActionDate && lmActionDate <= promise);
+  row._dot = !!(promise && delivered && delivered <= promise);
+  row._rot = !!(promise && rejected && rejected <= promise);
+  row._dotRot = row._dot || row._rot;
+  row._dsr = outcome === 'Delivered';
+  row._fdds = !!(delivered && (row['Forward Attempted Count'] === null || row['Forward Attempted Count'] === undefined || Number(row['Forward Attempted Count']) === 0));
+
+  if (!promise) { row._attribution = 'No Promise Date Generated'; row._overallBreach = false; return row; }
+
+  const reachedLM = !!lmArrival;
+  const reachedLMLate = reachedLM && lmArrival > promise;
+  const reachedLMOnTime = reachedLM && lmArrival <= promise;
+  const failedToReachLMInTime = reachedLMLate || (!reachedLM && refClock > promise);
+  const notYetDue = refClock <= promise;
+  const resolvedDate = minDate(delivered, rejected);
+  const deliveredOnTime = !!resolvedDate && resolvedDate <= promise;
+  const connected = !!inTransit;
+  const { deadline, hasLane } = fmDeadline(networkArrival, row['FM Territory'], row['LM Territory']);
+  const fmBreachFinal = hasLane ? ((connected && inTransit > deadline) || (!connected && refClock > deadline)) : false;
+  row._laneInTable = hasLane;
+
+  let attribution;
+  if (reachedLMOnTime && deliveredOnTime) attribution = 'On Time';
+  else if (!reachedLM && notYetDue) attribution = 'On Time';
+  else if (reachedLMOnTime && !deliveredOnTime) attribution = 'LM';
+  else if (failedToReachLMInTime && fmBreachFinal) attribution = 'FM';
+  else if (failedToReachLMInTime && !fmBreachFinal) attribution = 'MM';
+  else attribution = 'On Time';
+
+  row._attribution = attribution;
+  row._overallBreach = ['FM', 'MM', 'LM'].includes(attribution);
+  return row;
+}
+
+/* ======================================================================
+   FRAUD ATTEMPT CLASSIFICATION (Valid / Invalid LM breach)
+   ------------------------------------------------------------------
+   Per-attempt-row rule, in this priority order:
+     1. con_at_distance_m > 70000        -> VALID, tag "Customer Issue"
+        (an implausible GPS distance is treated as a data/GPS issue, not
+        fraud - genuine, but flagged separately from a normal Genuine)
+     2. fraud_status === "Genuine"       -> VALID, tag "Genuine"
+     3. fraud_status === "Address Issue" -> VALID, tag "Address Issue"
+        (an address problem is not a fraudulent attempt)
+     4. fraud_status is "Fake - OR/AT under 30 min" OR "Fake - AT under
+        500 m" AND con_at_distance_m < 1000 -> VALID, tag "Genuine
+        (distance override)" - a small on-ground distance suggests the
+        "fake" flag was a false positive, not real fraud
+     5. fraud_status contains "fake" (any other fake variant, e.g. "Fake
+        - AI analyzed", "Fake - non-local, over 2500 m", or the two cases
+        above when the distance override does NOT apply) -> INVALID
+     6. anything else unrecognized       -> UNCLASSIFIED (excluded from
+        both Valid and Invalid; shown separately so it's never silently
+        miscounted either way)
+
+   Per-shipment (tracking_id) rollup: a shipment is deemed to have made a
+   VALID attempt if ANY of its attempt rows classify as valid - i.e. "did
+   LM make at least one genuine attempt for this shipment." Only if EVERY
+   attempt row is invalid does the shipment roll up as INVALID.
+   ====================================================================== */
+function classifyFraudRow(row) {
+  const status = row['fraud_status'] ? String(row['fraud_status']).trim() : '';
+  const dist = parseNumberLoose(row['con_at_distance_m']);
+
+  if (dist !== null && dist > 70000) return { valid: true, tag: 'Customer Issue' };
+  if (status === 'Genuine') return { valid: true, tag: 'Genuine' };
+  if (status === 'Address Issue') return { valid: true, tag: 'Address Issue' };
+  if ((status === 'Fake - OR/AT under 30 min' || status === 'Fake - AT under 500 m') && dist !== null && dist < 1000) {
+    return { valid: true, tag: 'Genuine (distance override)' };
+  }
+  if (status.toLowerCase().includes('fake')) return { valid: false, tag: status };
+  return { valid: null, tag: status ? ('Unclassified: ' + status) : 'Unclassified' };
+}
+
+/** Per-shipment rule: ONLY the most recent attempt (by at_time) decides Valid vs Invalid -
+ * earlier attempts for the same tracking_id are not aggregated or OR'd together, they are
+ * superseded by whichever attempt happened last. If at_time can't be parsed for a row, it
+ * can still be picked as the very first entry seen for that id, but will never override an
+ * entry that already has a real, later timestamp. */
+function buildFraudLookup(fraudRows) {
+  const latestById = new Map(); // id -> { atTime, row }
+  for (const r of fraudRows) {
+    const id = r['tracking_id'] !== null && r['tracking_id'] !== undefined ? String(r['tracking_id']).trim() : null;
+    if (!id) continue;
+    const atTime = parseFlexibleDate(r['at_time']);
+    const existing = latestById.get(id);
+    if (!existing || (atTime && (!existing.atTime || atTime > existing.atTime))) {
+      latestById.set(id, { atTime, row: r });
+    }
+  }
+  const result = new Map();
+  for (const [id, entry] of latestById.entries()) {
+    const cls = classifyFraudRow(entry.row);
+    // Per business rule: no genuine evidence of fraud on the deciding attempt means the
+    // shipment gets the benefit of the doubt - "Unclassified" (an unrecognized fraud_status
+    // value, which should not occur with the six known statuses) is treated the same way.
+    const bucket = cls.valid === false ? 'Invalid' : 'Valid';
+    result.set(id, { bucket, tag: cls.tag });
+  }
+  return result;
+}
+</script>
+
+<script>
+/* ======================================================================
+   DATA PIPELINE
+   ====================================================================== */
+const CANONICAL_COLUMNS = [
+  'AWB No', 'Status', 'Manifested Date', 'Network Arrival Date', 'In Transit Time',
+  'LM Arrival Time', 'First Out On Road Date', 'First Attempt Date', 'Delivered Date',
+  'Rejected', 'Delivery Slot End Timestamp', 'modified', 'Forward Attempted Count',
+  'FM Station Name', 'LM Station Name', 'FM Territory', 'LM Territory',
+];
+const REQUIRED_COLS = ['AWB No', 'Network Arrival Date', 'Delivery Slot End Timestamp', 'LM Territory', 'LM Station Name'];
+const LARGE_FILE_WARN = 50000;
+const VERY_LARGE_FILE_WARN = 300000;
+
+function normalizeHeader(s) { return String(s == null ? '' : s).trim().toLowerCase().replace(/[\s_\-]+/g, ''); }
+function remapHeaders(rows) {
+  if (!rows.length) return rows;
+  const normalizedCanonical = {};
+  CANONICAL_COLUMNS.forEach(c => { normalizedCanonical[normalizeHeader(c)] = c; });
+  const sampleKeys = Object.keys(rows[0]);
+  const keyMap = {};
+  sampleKeys.forEach(k => {
+    const norm = normalizeHeader(k);
+    if (normalizedCanonical[norm] && normalizedCanonical[norm] !== k) keyMap[k] = normalizedCanonical[norm];
+  });
+  if (!Object.keys(keyMap).length) return rows;
+  return rows.map(r => {
+    const out = Object.assign({}, r);
+    for (const [oldK, newK] of Object.entries(keyMap)) { if (out[newK] === undefined || out[newK] === null) out[newK] = r[oldK]; }
+    return out;
+  });
+}
+
+function getHeaderRow(ws) {
+  if (!ws || !ws['!ref']) return [];
+  try {
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    const headerRange = { s: { r: range.s.r, c: range.s.c }, e: { r: range.s.r, c: range.e.c } };
+    const rangeStr = XLSX.utils.encode_range(headerRange);
+    const json = XLSX.utils.sheet_to_json(ws, { header: 1, range: rangeStr, defval: null });
+    return json.length ? json[0] : [];
+  } catch (e) { return []; }
+}
+function sheetHasColumn(headerRow, colName) {
+  if (!Array.isArray(headerRow)) return false;
+  return headerRow.some(h => normalizeHeader(h) === normalizeHeader(colName));
+}
+function pickSheet(workbook, preferredName, requiredCol) {
+  if (preferredName && workbook.SheetNames.includes(preferredName)) return preferredName;
+  for (const name of workbook.SheetNames) {
+    const headerRow = getHeaderRow(workbook.Sheets[name]);
+    if (headerRow.length && sheetHasColumn(headerRow, requiredCol)) return name;
+  }
+  return workbook.SheetNames[0];
+}
+function loadWorkbook(arrayBuffer, preferredSheet, requiredCol) {
+  const wb = XLSX.read(arrayBuffer, { type: 'array', dense: true });
+  if (!wb.SheetNames || !wb.SheetNames.length) throw new Error('This file has no sheets.');
+  const sheetName = pickSheet(wb, preferredSheet, requiredCol);
+  const ws = wb.Sheets[sheetName];
+  let rows = XLSX.utils.sheet_to_json(ws, { defval: null });
+  if (!rows.length) {
+    throw new Error(`The selected sheet ("${sheetName}") produced no data rows. Sheets found: ${wb.SheetNames.join(', ')}. ` +
+      `If this .xlsx keeps failing on a large file, try converting it to CSV instead - CSV parsing in this dashboard ` +
+      `bypasses the Excel file format entirely and is much lighter on memory.`);
+  }
+  rows = remapHeaders(rows);
+  return { rows, sheetName };
+}
+
+function parseCSV(text) {
+  const rows = [];
+  const len = text.length;
+  let i = 0;
+  while (i < len) {
+    const row = [];
+    for (;;) {
+      let field;
+      if (text.charCodeAt(i) === 34) { // opening quote
+        i++;
+        let start = i, buf = '';
+        for (;;) {
+          const code = text.charCodeAt(i);
+          if (code === 34) { // a quote: either an escaped "" or the closing quote
+            if (text.charCodeAt(i + 1) === 34) { buf += text.slice(start, i + 1); i += 2; start = i; }
+            else { buf += text.slice(start, i); i++; break; }
+          } else if (i >= len) { buf += text.slice(start, i); break; }
+          else i++;
+        }
+        field = buf;
+      } else {
+        const start = i;
+        while (i < len) {
+          const code = text.charCodeAt(i);
+          if (code === 44 || code === 10 || code === 13) break; // , \n \r
+          i++;
+        }
+        field = text.slice(start, i);
+      }
+      row.push(field);
+      const code = text.charCodeAt(i);
+      if (code === 44) { i++; continue; } // ,
+      if (code === 13) i++; // \r
+      if (text.charCodeAt(i) === 10) i++; // \n
+      break;
+    }
+    if (!(row.length === 1 && row[0] === '')) rows.push(row);
+  }
+  if (!rows.length) return [];
+  const header = rows[0];
+  // Compile a specialized constructor with the header's field names baked in as literal
+  // object keys (not dynamic bracket-notation assignment) - this keeps every row object on
+  // the same fast, stable V8 hidden class instead of falling into slow dictionary-mode
+  // storage, which is essential for wide files (many columns) at real-world row counts.
+  const params = header.map((_, i) => 'v' + i);
+  const propsLiteral = header.map((h, i) => `${JSON.stringify(h)}: (v${i} !== undefined && v${i} !== '') ? v${i} : null`).join(', ');
+  const buildRow = new Function(...params, `return { ${propsLiteral} };`);
+  const out = [];
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i].length === 1 && rows[i][0] === '') continue;
+    out.push(buildRow.apply(null, rows[i]));
+  }
+  return out;
+}
+function loadCSV(text) {
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // strip leading UTF-8 BOM if present
+  let rows = parseCSV(text);
+  if (!rows.length) throw new Error('This CSV file produced no data rows.');
+  rows = remapHeaders(rows);
+  return { rows, sheetName: '(CSV)' };
+}
+
+function yieldToMain() { return new Promise(resolve => setTimeout(resolve, 0)); }
+
+async function processRows(rawRows, onProgress) {
+  if (!rawRows.length) throw new Error('The sheet has no data rows.');
+  const foundCols = Object.keys(rawRows[0]);
+  const missing = REQUIRED_COLS.filter(c => !(c in rawRows[0]));
+  if (missing.length) {
+    throw new Error('This export is missing expected column(s): ' + missing.join(', ') + '. Columns found: ' + foundCols.join(', '));
+  }
+  const AS_OF = new Date();
+  let rowErrors = 0;
+  const CHUNK = 5000;
+
+  for (let i = 0; i < rawRows.length; i += CHUNK) {
+    const end = Math.min(i + CHUNK, rawRows.length);
+    for (let j = i; j < end; j++) {
+      const r = rawRows[j];
+      try {
+        r._networkArrival = parseFlexibleDate(r['Network Arrival Date']);
+        r._inTransit = parseFlexibleDate(r['In Transit Time']);
+        r._lmArrival = parseFlexibleDate(r['LM Arrival Time']);
+        r._delivered = parseFlexibleDate(r['Delivered Date']);
+        r._rejected = parseFlexibleDate(r['Rejected']);
+        r._promise = parseFlexibleDate(r['Delivery Slot End Timestamp']);
+        r._modified = parseFlexibleDate(r['modified']);
+        r._firstOutOnRoad = parseFlexibleDate(r['First Out On Road Date']);
+        r._firstAttempt = parseFlexibleDate(r['First Attempt Date']);
+      } catch (e) {
+        rowErrors++;
+        r._networkArrival = r._inTransit = r._lmArrival = r._delivered = r._rejected = r._promise = r._modified = r._firstOutOnRoad = r._firstAttempt = null;
+      }
+    }
+    if (onProgress) onProgress('Parsing dates', end, rawRows.length);
+    await yieldToMain();
+  }
+
+  const byAwb = new Map();
+  let missingAwbCount = 0;
+  for (const r of rawRows) {
+    const awb = r['AWB No'] === null || r['AWB No'] === undefined ? null : String(r['AWB No']).trim();
+    if (awb === null || awb === '') { missingAwbCount++; continue; }
+    const existing = byAwb.get(awb);
+    if (!existing) { byAwb.set(awb, r); continue; }
+    const a = existing._modified ? existing._modified.getTime() : -Infinity;
+    const b = r._modified ? r._modified.getTime() : -Infinity;
+    if (b >= a) byAwb.set(awb, r);
+  }
+  let rows = Array.from(byAwb.values());
+  const dupRemoved = rawRows.length - missingAwbCount - rows.length;
+  await yieldToMain();
+
+  const beforePickupFilter = rows.length;
+  rows = rows.filter(r => !!r._networkArrival);
+  const pendingPickupRemoved = beforePickupFilter - rows.length;
+  await yieldToMain();
+
+  let computeErrors = 0;
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const end = Math.min(i + CHUNK, rows.length);
+    for (let j = i; j < end; j++) {
+      const r = rows[j];
+      try { computeRow(r, AS_OF); }
+      catch (e) {
+        computeErrors++;
+        r._outcome = 'Pending / In-Progress'; r._terminal = false; r._attribution = 'On Time'; r._overallBreach = false;
+        r._aot = r._dot = r._rot = r._dotRot = r._dsr = r._fdds = false;
+      }
+    }
+    if (onProgress) onProgress('Computing breaches', end, rows.length);
+    await yieldToMain();
+  }
+  return { rows, AS_OF, dupRemoved, pendingPickupRemoved, missingAwbCount, rowErrors, computeErrors, totalRaw: rawRows.length };
+}
+
+function generateSampleRows() {
+  const territories = ['Bengaluru', 'Delhi NCR', 'Mumbai', 'Kolkata'];
+  const hubsByTerritory = {
+    'Bengaluru': ['Chennai', 'Hyderabad', 'Mysore', 'Kochi', 'Coimbatore'],
+    'Delhi NCR': ['Jaipur', 'Meerut', 'Dehradun', 'Chandigarh', 'Lucknow'],
+    'Mumbai': ['Ahmedabad', 'Surat', 'Pune', 'Panaji', 'Nagpur'],
+    'Kolkata': ['Patna', 'Bhubaneswar', 'Cuttack'],
+  };
+  const statuses = ['Delivered', 'Arrival', 'In Vehicle Transit', 'Out on road', 'Cancelled'];
+  const rows = [];
+  let awbCounter = 9000000;
+  const today = new Date();
+  for (let d = 12; d >= 0; d--) {
+    const day = new Date(today); day.setDate(today.getDate() - d);
+    const volume = 60 + Math.floor(Math.random() * 90);
+    for (let i = 0; i < volume; i++) {
+      const fmT = territories[Math.floor(Math.random() * territories.length)];
+      const hubs = hubsByTerritory[fmT];
+      const lmT = hubs[Math.floor(Math.random() * hubs.length)];
+      const pickup = new Date(day); pickup.setHours(9 + Math.floor(Math.random() * 10), Math.floor(Math.random() * 60));
+      const promise = new Date(pickup); promise.setDate(promise.getDate() + 1); promise.setHours(23, 59, 58);
+      const fmBreachRoll = Math.random() < 0.08;
+      const mmBreachRoll = !fmBreachRoll && Math.random() < 0.1;
+      const lmBreachRoll = !fmBreachRoll && !mmBreachRoll && Math.random() < 0.22;
+      const inTransit = new Date(pickup.getTime() + (fmBreachRoll ? 30 : 4) * 3600000);
+      let lmArrival = null, delivered = null, firstOutOnRoad = null, forwardAttempted = 0;
+      if (!fmBreachRoll) {
+        lmArrival = new Date(inTransit.getTime() + (mmBreachRoll ? 34 : 10) * 3600000);
+        if (!mmBreachRoll && !lmBreachRoll) { delivered = new Date(lmArrival.getTime() + (2 + Math.random() * 20) * 3600000); firstOutOnRoad = new Date(lmArrival.getTime() + 1 * 3600000); }
+        else if (!mmBreachRoll && lmBreachRoll && Math.random() < 0.3) { delivered = new Date(promise.getTime() + (2 + Math.random() * 30) * 3600000); forwardAttempted = Math.random() < 0.5 ? 1 : 0; }
+      }
+      const status = delivered ? 'Delivered' : statuses[Math.floor(Math.random() * statuses.length)];
+      const awb = String(awbCounter++);
+      rows.push({
+        'AWB No': awb, 'Status': status, 'Manifested Date': pickup, 'Network Arrival Date': pickup, 'In Transit Time': inTransit,
+        'LM Arrival Time': lmArrival, 'First Out On Road Date': firstOutOnRoad, 'First Attempt Date': null, 'Forward Attempted Count': forwardAttempted,
+        'Delivered Date': delivered, 'Rejected': null, 'Delivery Slot End Timestamp': promise, 'modified': new Date(promise.getTime() + 3600000),
+        'FM Station Name': fmT + ' FM Hub', 'LM Station Name': lmT + ' LM Hub', 'FM Territory': fmT, 'LM Territory': lmT,
+      });
+    }
+  }
+  return rows;
+}
+</script>
+
+<script>
+/* ======================================================================
+   APP STATE + RENDERING
+   ====================================================================== */
+const state = {
+  allRows: [], filteredRows: [], chart: null,
+  tableLevel: 'territory', sortKey: 'count', sortDir: 'desc',
+  page: 1, pageSize: 12, fileLabel: '',
+  unlocked1100: false, unlockedFraud: false, unlockedRM: false,
+  fraudLookup: new Map(), rmLookup: new Map(),
+};
+
+const $ = sel => document.querySelector(sel);
+const fmtPct = x => (x === null || x === undefined || isNaN(x)) ? '—' : (x * 100).toFixed(1) + '%';
+const fmtNum = x => x.toLocaleString('en-IN');
+function setProcessingDetail(html) { const el = $('#processingDetail'); if (el) el.innerHTML = html; }
+
+function lookupRM(hubName) {
+  const key = normHubKey(hubName);
+  return key ? (state.rmLookup.get(key) || null) : null;
+}
+
+function enrichRows() {
+  for (const r of state.allRows) {
+    if (r._attribution === 'LM') {
+      const entry = state.fraudLookup.get(String(r['AWB No']).trim());
+      // No matching fraud-report record at all = no evidence of a fraudulent attempt, so
+      // this shipment gets the benefit of the doubt and counts as Valid. This guarantees
+      // Valid% + Invalid% always exactly equals LM Breach% - there is no third bucket.
+      r._lmFraudBucket = entry ? entry.bucket : 'Valid';
+      r._lmFraudTag = entry ? entry.tag : 'No fraud-report record for this AWB (defaulted to Valid)';
+    } else {
+      r._lmFraudBucket = null; r._lmFraudTag = null;
+    }
+    r._rm = lookupRM(r['LM Station Name']);
+  }
+}
+
+/** Once an RM Mapping is loaded, shipments whose hub has no RM match are dropped
+ * entirely from the working dataset (not just filtered from view) - per the requirement
+ * that only RM-mapped data should be shown or exported. Returns how many rows were
+ * removed, so the caller can report it. No-op if no RM mapping has been loaded yet. */
+function pruneToRMMapped() {
+  if (!state.rmLookup.size) return 0;
+  const before = state.allRows.length;
+  state.allRows = state.allRows.filter(r => !!r._rm);
+  return before - state.allRows.length;
+}
+
+function metrics(rows) {
+  const total = rows.length;
+  const overall = rows.filter(r => r._overallBreach).length;
+  const fm = rows.filter(r => r._attribution === 'FM').length;
+  const mm = rows.filter(r => r._attribution === 'MM').length;
+  const lm = rows.filter(r => r._attribution === 'LM').length;
+  const onTime = rows.filter(r => r._attribution === 'On Time').length;
+  const dsr = rows.filter(r => r._dsr).length;
+  const validLm = rows.filter(r => r._lmFraudBucket === 'Valid').length;
+  const invalidLm = rows.filter(r => r._lmFraudBucket === 'Invalid').length;
+  const notAssessedLm = rows.filter(r => r._lmFraudBucket === 'Not Assessed' || r._lmFraudBucket === 'Unclassified').length;
+  return {
+    total, overall, fm, mm, lm, onTime, dsr, validLm, invalidLm, notAssessedLm,
+    overallPct: total ? overall / total : null, onTimePct: total ? onTime / total : null,
+    fmPct: total ? fm / total : null, mmPct: total ? mm / total : null, lmPct: total ? lm / total : null,
+    dsrPct: total ? dsr / total : null, validLmPct: total ? validLm / total : null, invalidLmPct: total ? invalidLm / total : null,
+  };
+}
+
+function applyFilters() {
+  const startVal = $('#dseStart').value, endVal = $('#dseEnd').value;
+  const territory = $('#territoryFilter').value, hub = $('#hubFilter').value, rm = $('#rmFilter').value;
+  const start = startVal ? new Date(startVal + 'T00:00:00') : null;
+  const end = endVal ? new Date(endVal + 'T23:59:59') : null;
+
+  state.filteredRows = state.allRows.filter(r => {
+    if (!r._promise) return false;
+    if (start && r._promise < start) return false;
+    if (end && r._promise > end) return false;
+    if (territory !== '__all__' && r['LM Territory'] !== territory) return false;
+    if (hub !== '__all__' && r['LM Station Name'] !== hub) return false;
+    if (rm !== '__all__' && r._rm !== rm) return false;
+    return true;
+  });
+  state.page = 1;
+  renderAll();
+}
+
+function previousPeriodRows() {
+  const startVal = $('#dseStart').value, endVal = $('#dseEnd').value;
+  if (!startVal || !endVal) return null;
+  const start = new Date(startVal + 'T00:00:00'), end = new Date(endVal + 'T23:59:59');
+  const spanMs = end - start;
+  if (spanMs <= 0) return null;
+  const prevEnd = new Date(start.getTime() - 1);
+  const prevStart = new Date(prevEnd.getTime() - spanMs);
+  const territory = $('#territoryFilter').value, hub = $('#hubFilter').value, rm = $('#rmFilter').value;
+  const prevRows = state.allRows.filter(r => {
+    if (!r._promise) return false;
+    if (r._promise < prevStart || r._promise > prevEnd) return false;
+    if (territory !== '__all__' && r['LM Territory'] !== territory) return false;
+    if (hub !== '__all__' && r['LM Station Name'] !== hub) return false;
+    if (rm !== '__all__' && r._rm !== rm) return false;
+    return true;
+  });
+  return prevRows.length ? prevRows : null;
+}
+
+function trendPillHTML(current, previous, lowerIsBetter, mode = 'pct') {
+  if (current === null || previous === null || previous === undefined) return '<span class="text-mute">vs prior n/a</span>';
+  const diff = current - previous;
+  const threshold = mode === 'pct' ? 0.0005 : 0.5;
+  if (Math.abs(diff) < threshold) return '<span class="text-mute">flat</span>';
+  const improved = lowerIsBetter ? diff < 0 : diff > 0;
+  const arrow = diff > 0 ? '&uarr;' : '&darr;';
+  const color = improved ? 'text-ontime' : 'text-lm';
+  const label = mode === 'pct' ? `${Math.abs(diff * 100).toFixed(1)}pt` : fmtNum(Math.round(Math.abs(diff)));
+  return `<span class="${color} inline-flex items-center gap-0.5">${arrow} ${label}</span>`;
+}
+
+function renderKPIs() {
+  const m = metrics(state.filteredRows);
+  const prevRows = previousPeriodRows();
+  const pm = prevRows ? metrics(prevRows) : null;
+  $('#kpiTotal').textContent = fmtNum(m.total);
+  $('#kpiBreach').textContent = fmtPct(m.overallPct);
+  $('#kpiValidLM').textContent = fmtPct(m.validLmPct);
+  $('#kpiInvalidLM').textContent = fmtPct(m.invalidLmPct);
+  $('#kpiTotalTrend').innerHTML = pm ? trendPillHTML(m.total, pm.total, false, 'count') : '';
+  $('#kpiBreachTrend').innerHTML = pm ? trendPillHTML(m.overallPct, pm.overallPct, true, 'pct') : '';
+  $('#kpiValidLMTrend').innerHTML = pm ? trendPillHTML(m.validLmPct, pm.validLmPct, true, 'pct') : '';
+  $('#kpiInvalidLMTrend').innerHTML = pm ? trendPillHTML(m.invalidLmPct, pm.invalidLmPct, true, 'pct') : '';
+}
+
+function renderHealthStrip() {
+  const m = metrics(state.filteredRows);
+  const segs = [
+    { label: 'On Time', pct: m.onTimePct, color: 'bg-ontime' },
+    { label: 'FM breach', pct: m.fmPct, color: 'bg-fm' },
+    { label: 'MM breach', pct: m.mmPct, color: 'bg-mm' },
+    { label: 'LM breach', pct: m.lmPct, color: 'bg-lm' },
+  ];
+  $('#healthStrip').innerHTML = segs.map(s => `<div class="segbar-seg ${s.color} h-full flex items-center justify-center" style="flex-basis:${((s.pct||0)*100).toFixed(2)}%" title="${s.label}: ${fmtPct(s.pct)}">
+      ${(s.pct||0) > 0.08 ? `<span class="text-[10px] font-semibold text-white/90">${fmtPct(s.pct)}</span>` : ''}
+    </div>`).join('');
+  const colorHex = { 'On Time': '#0F9D8A', 'FM breach': '#D97706', 'MM breach': '#7C3AED', 'LM breach': '#DC2626' };
+  $('#healthLegend').innerHTML = segs.map(s => `<span class="inline-flex items-center gap-1.5 text-mute">
+      <span class="w-2 h-2 rounded-full" style="background:${colorHex[s.label]}"></span>${s.label} &middot; ${fmtNum(m[s.label==='On Time'?'onTime':s.label==='FM breach'?'fm':s.label==='MM breach'?'mm':'lm'])}
+    </span>`).join('') + `<span class="inline-flex items-center gap-1.5 text-mute"><span class="w-2 h-2 rounded-full bg-validc"></span>Valid LM &middot; ${fmtNum(m.validLm)}</span>` +
+    `<span class="inline-flex items-center gap-1.5 text-mute"><span class="w-2 h-2 rounded-full bg-invalidc"></span>Invalid LM &middot; ${fmtNum(m.invalidLm)}</span>`;
+  $('#asOfStamp').textContent = 'as of ' + new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+const CHART_FONT = { family: 'Inter', size: 11 };
+function gridColor() { return 'rgba(0,0,0,0.06)'; }
+function tickColor() { return '#6B7280'; }
+
+const KPI_DEFS = {
+  overallPct: { label: 'Overall Breach %', color: '#DC2626' },
+  fmPct: { label: 'FM Breach %', color: '#D97706' },
+  mmPct: { label: 'MM Breach %', color: '#7C3AED' },
+  lmPct: { label: 'LM Breach %', color: '#DC2626' },
+  validLmPct: { label: 'Valid LM Breach %', color: '#0F9D8A' },
+  invalidLmPct: { label: 'Invalid LM Breach %', color: '#DC2626' },
+  onTimePct: { label: 'On-Time %', color: '#0F9D8A' },
+  dsrPct: { label: 'DSR %', color: '#2563EB' },
+  dotPct: { label: 'DOT %', color: '#2563EB' },
+  rotPct: { label: 'ROT %', color: '#D97706' },
+  aotPct: { label: 'AOT %', color: '#7C3AED' },
+  fddsPct: { label: 'FDDS %', color: '#0F9D8A' },
+};
+
+function groupByKey(rows, keyFn) {
+  const map = new Map();
+  for (const r of rows) {
+    const k = keyFn(r);
+    if (k === null || k === undefined) continue;
+    if (!map.has(k)) map.set(k, []);
+    map.get(k).push(r);
+  }
+  return map;
+}
+
+function dayMetricValue(rows, kpiKey) {
+  const n = rows.length;
+  if (!n) return 0;
+  switch (kpiKey) {
+    case 'overallPct': return rows.filter(r => r._overallBreach).length / n;
+    case 'fmPct': return rows.filter(r => r._attribution === 'FM').length / n;
+    case 'mmPct': return rows.filter(r => r._attribution === 'MM').length / n;
+    case 'lmPct': return rows.filter(r => r._attribution === 'LM').length / n;
+    case 'validLmPct': return rows.filter(r => r._lmFraudBucket === 'Valid').length / n;
+    case 'invalidLmPct': return rows.filter(r => r._lmFraudBucket === 'Invalid').length / n;
+    case 'onTimePct': return rows.filter(r => r._attribution === 'On Time').length / n;
+    case 'dsrPct': return rows.filter(r => r._dsr).length / n;
+    case 'dotPct': return rows.filter(r => r._dot).length / n;
+    case 'rotPct': return rows.filter(r => r._rot).length / n;
+    case 'aotPct': return rows.filter(r => r._aot).length / n;
+    case 'fddsPct': return rows.filter(r => r._fdds).length / n;
+    default: return 0;
+  }
+}
+
+function renderTrendChart() {
+  if (state.chart) { state.chart.destroy(); state.chart = null; }
+  const kpiKey = $('#kpiPicker').value;
+  const def = KPI_DEFS[kpiKey];
+  const byDay = groupByKey(state.filteredRows, r => dayKey(r._promise));
+  const days = Array.from(byDay.entries()).map(([k, rows]) => ({ date: rows[0]._promise, rows })).sort((a, b) => a.date - b.date);
+  const labels = days.map(d => fmtDay(d.date));
+  const volumes = days.map(d => d.rows.length);
+  const values = days.map(d => +(dayMetricValue(d.rows, kpiKey) * 100).toFixed(1));
+
+  const ctx = $('#trendChart').getContext('2d');
+  state.chart = new Chart(ctx, {
+    data: {
+      labels,
+      datasets: [
+        { type: 'bar', label: 'Shipments', data: volumes, backgroundColor: 'rgba(37,99,235,0.18)', borderRadius: 4, yAxisID: 'y', order: 2, maxBarThickness: 26 },
+        { type: 'line', label: def.label, data: values, borderColor: def.color, backgroundColor: def.color, tension: 0.35, pointRadius: 2.5, pointBackgroundColor: def.color, yAxisID: 'y1', order: 1 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: tickColor(), font: CHART_FONT, usePointStyle: true } },
+        tooltip: { callbacks: { label: (c) => c.dataset.yAxisID === 'y1' ? ` ${def.label}: ${c.parsed.y}%` : ` Volume: ${c.parsed.y}` } },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: tickColor(), font: CHART_FONT } },
+        y: { position: 'left', grid: { color: gridColor() }, ticks: { color: tickColor(), font: CHART_FONT }, title: { display: true, text: 'Shipments', color: tickColor(), font: CHART_FONT } },
+        y1: { position: 'right', grid: { display: false }, ticks: { color: tickColor(), font: CHART_FONT, callback: v => v + '%' }, title: { display: true, text: def.label, color: tickColor(), font: CHART_FONT }, min: 0 },
+      },
+    },
+  });
+}
+
+function buildPerformanceRows() {
+  const byTerr = state.tableLevel === 'territory';
+  const groupField = byTerr ? 'LM Territory' : 'LM Station Name';
+  const grouped = groupByKey(state.filteredRows, r => r[groupField]);
+  return Array.from(grouped.entries()).map(([name, rows]) => {
+    const m = metrics(rows);
+    const n = rows.length;
+    const aot = rows.filter(r => r._aot).length / n;
+    const dot = rows.filter(r => r._dot).length / n;
+    const rot = rows.filter(r => r._rot).length / n;
+    const dotRot = rows.filter(r => r._dotRot).length / n;
+    const fdds = rows.filter(r => r._fdds).length / n;
+    let rm, territory = null;
+    if (byTerr) {
+      const rmSet = new Set(rows.map(r => r._rm).filter(Boolean));
+      rm = rmSet.size === 0 ? '—' : rmSet.size === 1 ? Array.from(rmSet)[0] : Array.from(rmSet).join(', ');
+    } else {
+      rm = rows[0]._rm || '—';
+      territory = rows[0]['LM Territory'] || '—';
+    }
+    return {
+      name, rm, territory, count: n, aot, dotrot: dotRot, dot, rot, dsr: m.dsrPct, fdds,
+      fmPct: m.fmPct, mmPct: m.mmPct, lmPct: m.lmPct, validLm: m.validLmPct, invalidLm: m.invalidLmPct,
+      _rows: rows,
+    };
+  });
+}
+
+function buildSummaryRow(rows, name, rm, territory) {
+  const n = rows.length;
+  if (!n) return null;
+  const m = metrics(rows);
+  const aot = rows.filter(r => r._aot).length / n;
+  const dot = rows.filter(r => r._dot).length / n;
+  const rot = rows.filter(r => r._rot).length / n;
+  const dotRot = rows.filter(r => r._dotRot).length / n;
+  const fdds = rows.filter(r => r._fdds).length / n;
+  return {
+    name, rm: rm ?? '—', territory: territory ?? null, count: n,
+    aot, dotrot: dotRot, dot, rot, dsr: m.dsrPct, fdds,
+    fmPct: m.fmPct, mmPct: m.mmPct, lmPct: m.lmPct, validLm: m.validLmPct, invalidLm: m.invalidLmPct,
+    _rows: rows, _isSummary: true,
+  };
+}
+
+function statusColor(pct) {
+  if (pct === null) return 'text-mute';
+  if (pct > 0.3) return 'text-lm';
+  if (pct > 0.15) return 'text-fm';
+  return 'text-ontime';
+}
+
+let currentPerfRows = [];
+
+/* ======================================================================
+   CONDITIONAL FORMATTING - shared by the on-screen table AND the Excel
+   export below, so the two can never show different colors for the same
+   data. Rules, as specified:
+     - AOT%: >=98% light green, else light red
+     - DOT%, DOT+ROT%, DSR%, FDDS%: >=85% light green, else light red
+     - ROT%: no rule (left plain)
+     - FM%, MM%, LM%, Valid LM%, Invalid LM%: any value > 0 -> light red
+       (0% is left plain - it's not a "breach" worth flagging)
+   ====================================================================== */
+const CF_GREEN = 'C6EFCE', CF_RED = 'FFC7CE'; // hex, no '#' - reused as-is by ExcelJS ARGB fills
+function cfHighIsGood(v, threshold) {
+  if (v === null || v === undefined || isNaN(v)) return null;
+  return v >= threshold ? CF_GREEN : CF_RED;
+}
+function cfNonZeroIsBad(v) {
+  if (v === null || v === undefined || isNaN(v)) return null;
+  return v > 0.00001 ? CF_RED : null;
+}
+const CF_RULES = {
+  aot: v => cfHighIsGood(v, 0.98),
+  dot: v => cfHighIsGood(v, 0.85),
+  dotrot: v => cfHighIsGood(v, 0.85),
+  dsr: v => cfHighIsGood(v, 0.85),
+  fdds: v => cfHighIsGood(v, 0.85),
+  fmPct: v => cfNonZeroIsBad(v),
+  mmPct: v => cfNonZeroIsBad(v),
+  lmPct: v => cfNonZeroIsBad(v),
+  validLm: v => cfNonZeroIsBad(v),
+  invalidLm: v => cfNonZeroIsBad(v),
+};
+function cfStyleAttr(key, value) {
+  const hex = CF_RULES[key] ? CF_RULES[key](value) : null;
+  return hex ? `style="background:#${hex}"` : '';
+}
+
+function perfRowHtml(d, idx, isHub, rowClass) {
+  return `
+    <tr class="${rowClass}" ${idx !== null ? `data-row-idx="${idx}"` : ''}>
+      <td class="px-4 sm:px-5 py-2.5 font-medium whitespace-nowrap">${d.name}</td>
+      ${isHub ? `<td class="px-3 py-2.5 text-mute whitespace-nowrap">${d.territory ?? ''}</td>` : ''}
+      <td class="px-3 py-2.5 text-mute whitespace-nowrap">${d.rm}</td>
+      <td class="px-3 py-2.5 text-right font-mono">${fmtNum(d.count)}</td>
+      <td class="px-3 py-2.5 text-right font-mono" ${cfStyleAttr('aot', d.aot)}>${fmtPct(d.aot)}</td>
+      <td class="px-3 py-2.5 text-right font-mono font-semibold" ${cfStyleAttr('dotrot', d.dotrot)}>${fmtPct(d.dotrot)}</td>
+      <td class="px-3 py-2.5 text-right font-mono" ${cfStyleAttr('dot', d.dot)}>${fmtPct(d.dot)}</td>
+      <td class="px-3 py-2.5 text-right font-mono">${fmtPct(d.rot)}</td>
+      <td class="px-3 py-2.5 text-right font-mono" ${cfStyleAttr('dsr', d.dsr)}>${fmtPct(d.dsr)}</td>
+      <td class="px-3 py-2.5 text-right font-mono" ${cfStyleAttr('fdds', d.fdds)}>${fmtPct(d.fdds)}</td>
+      <td class="px-3 py-2.5 text-right font-mono text-fm" ${cfStyleAttr('fmPct', d.fmPct)}>${fmtPct(d.fmPct)}</td>
+      <td class="px-3 py-2.5 text-right font-mono text-mm" ${cfStyleAttr('mmPct', d.mmPct)}>${fmtPct(d.mmPct)}</td>
+      <td class="px-3 py-2.5 text-right font-mono ${statusColor(d.lmPct)}" ${cfStyleAttr('lmPct', d.lmPct)}>${fmtPct(d.lmPct)}</td>
+      <td class="px-3 py-2.5 text-right font-mono text-validc" ${cfStyleAttr('validLm', d.validLm)}>${fmtPct(d.validLm)}</td>
+      <td class="px-3 sm:px-5 py-2.5 text-right font-mono text-invalidc" ${cfStyleAttr('invalidLm', d.invalidLm)}>${fmtPct(d.invalidLm)}</td>
+    </tr>`;
+}
+
+function renderPerfTable() {
+  let data = buildPerformanceRows();
+  const search = $('#tableSearch').value.trim().toLowerCase();
+  if (search) data = data.filter(d => d.name.toLowerCase().includes(search) || (d.rm && d.rm.toLowerCase().includes(search)));
+
+  data.sort((a, b) => {
+    const dir = state.sortDir === 'asc' ? 1 : -1;
+    const av = a[state.sortKey], bv = b[state.sortKey];
+    if (typeof av === 'string') return av.localeCompare(bv) * dir;
+    return ((av ?? -1) - (bv ?? -1)) * dir;
+  });
+  currentPerfRows = data;
+
+  const noun = state.tableLevel === 'territory' ? 'territories' : 'hubs';
+  const isHub = state.tableLevel === 'hub';
+  $('#colTerritoryHeader').classList.toggle('hidden', !isHub);
+
+  let bodyHtml = '';
+  const clickableRows = []; // parallel to data-row-idx, in the order rows are emitted
+
+  if (!data.length) {
+    bodyHtml = `<tr><td colspan="14" class="text-center py-8 text-mute text-sm">No ${noun} match the current filters.</td></tr>`;
+    $('#pageInfo').textContent = 'Page 1 of 1';
+    $('#prevPage').disabled = true; $('#nextPage').disabled = true;
+  } else if ($('#subtotalsToggle').checked) {
+    // Grouped-by-RM view: every row for the same RM sits together, followed by a
+    // sub-total for that RM. Pagination doesn't make sense combined with grouping,
+    // so this mode always shows the full list.
+    const byRm = new Map();
+    for (const d of data) { const key = d.rm || '—'; if (!byRm.has(key)) byRm.set(key, []); byRm.get(key).push(d); }
+    const rmNames = Array.from(byRm.keys()).sort((a, b) => a.localeCompare(b));
+    for (const rmName of rmNames) {
+      const group = byRm.get(rmName);
+      for (const d of group) { clickableRows.push(d); bodyHtml += perfRowHtml(d, clickableRows.length - 1, isHub, 'row-clickable transition-colors'); }
+      const subtotal = buildSummaryRow(group.flatMap(d => d._rows), `${rmName} \u2014 Sub-total`, rmName, isHub ? '' : null);
+      if (subtotal) bodyHtml += perfRowHtml(subtotal, null, isHub, 'bg-surface2 font-semibold border-y border-edge');
+    }
+    $('#pageInfo').textContent = `Showing all ${fmtNum(data.length)} ${noun}, grouped by RM`;
+    $('#prevPage').disabled = true; $('#nextPage').disabled = true;
+  } else {
+    const totalPages = Math.max(1, Math.ceil(data.length / state.pageSize));
+    state.page = Math.min(state.page, totalPages);
+    const pageData = data.slice((state.page - 1) * state.pageSize, state.page * state.pageSize);
+    pageData.forEach(d => { clickableRows.push(d); bodyHtml += perfRowHtml(d, clickableRows.length - 1, isHub, 'row-clickable transition-colors'); });
+    $('#pageInfo').textContent = `Page ${state.page} of ${totalPages}`;
+    $('#prevPage').disabled = state.page <= 1;
+    $('#nextPage').disabled = state.page >= totalPages;
+  }
+
+  if (data.length) {
+    // Grand Total - always computed over the FULL filtered dataset (every row currently
+    // in scope, regardless of search/page/grouping), not just what's visible above it.
+    const grandTotal = buildSummaryRow(state.filteredRows, 'Grand Total', 'All RMs', isHub ? 'All Territories' : null);
+    if (grandTotal) bodyHtml += perfRowHtml(grandTotal, null, isHub, 'bg-surface2 font-bold border-t-2 border-edge');
+  }
+
+  $('#perfTableBody').innerHTML = bodyHtml;
+
+  document.querySelectorAll('#perfTableBody tr[data-row-idx]').forEach(tr => {
+    tr.addEventListener('click', () => openDrilldown(clickableRows[+tr.dataset.rowIdx]));
+  });
+
+  $('#tableCount').textContent = `${fmtNum(data.length)} ${noun}`;
+
+  document.querySelectorAll('.th-sort').forEach(el => el.classList.remove('text-brand'));
+  const activeTh = document.querySelector(`.th-sort[data-key="${state.sortKey}"]`);
+  if (activeTh) { activeTh.classList.add('text-brand'); const arrow = activeTh.querySelector('.sort-arrow'); arrow.innerHTML = state.sortDir === 'asc' ? '&uarr;' : '&darr;'; arrow.style.opacity = 1; }
+}
+
+function openDrilldown(rowData) {
+  const rows = rowData._rows;
+  $('#drillTitle').textContent = rowData.name;
+  $('#drillSubtitle').textContent = `${fmtNum(rows.length)} shipments &middot; RM: ${rowData.rm}` + (rowData.territory ? ` &middot; Territory: ${rowData.territory}` : '');
+  const bucketRank = { 'FM': 0, 'MM': 1, 'LM': 2, 'On Time': 3, 'No Promise Date Generated': 4 };
+  const sorted = [...rows].sort((a, b) => (bucketRank[a._attribution] ?? 9) - (bucketRank[b._attribution] ?? 9));
+  const MAX_SHOW = 2000;
+  const shown = sorted.slice(0, MAX_SHOW);
+  const bucketBadge = (attr, fraudBucket) => {
+    if (attr === 'LM' && fraudBucket) {
+      const cls = fraudBucket === 'Valid' ? 'bg-validc/10 text-validc' : fraudBucket === 'Invalid' ? 'bg-invalidc/10 text-invalidc' : 'bg-surface2 text-mute';
+      return `<span class="px-1.5 py-0.5 rounded text-[10px] font-medium ${cls}">LM &middot; ${fraudBucket}</span>`;
+    }
+    const colorMap = { 'FM': 'bg-fm/10 text-fm', 'MM': 'bg-mm/10 text-mm', 'On Time': 'bg-ontime/10 text-ontime', 'No Promise Date Generated': 'bg-surface2 text-mute' };
+    return `<span class="px-1.5 py-0.5 rounded text-[10px] font-medium ${colorMap[attr] || 'bg-surface2 text-mute'}">${attr}</span>`;
+  };
+  $('#drillBody').innerHTML = shown.map(r => `
+    <tr>
+      <td class="px-4 py-2 font-mono">${r['AWB No']}</td>
+      <td class="px-3 py-2">${r['Status'] || '—'}</td>
+      <td class="px-3 py-2">${bucketBadge(r._attribution, r._lmFraudBucket)}</td>
+      <td class="px-3 py-2 text-mute">${r._lmFraudTag || '—'}</td>
+      <td class="px-3 py-2">${r['LM Station Name'] || '—'}</td>
+      <td class="px-3 py-2">${r['LM Territory'] || '—'}</td>
+      <td class="px-3 py-2">${r._rm || '—'}</td>
+      <td class="px-3 py-2 font-mono">${r._promise ? fmtDay(r._promise) : '—'}</td>
+    </tr>`).join('');
+  $('#drillFooter').textContent = rows.length > MAX_SHOW ? `Showing first ${fmtNum(MAX_SHOW)} of ${fmtNum(rows.length)} - narrow filters to see more precisely.` : `${fmtNum(rows.length)} shipments shown.`;
+  $('#drillModal').classList.remove('hidden');
+}
+$('#drillClose').addEventListener('click', () => $('#drillModal').classList.add('hidden'));
+$('#drillModal').addEventListener('click', (e) => { if (e.target.id === 'drillModal') $('#drillModal').classList.add('hidden'); });
+
+function populateFilterOptions() {
+  const territories = [...new Set(state.allRows.map(r => r['LM Territory']).filter(Boolean))].sort();
+  $('#territoryFilter').innerHTML = '<option value="__all__">All Territories</option>' + territories.map(t => `<option value="${t}">${t}</option>`).join('');
+  const rms = [...new Set(state.allRows.map(r => r._rm).filter(Boolean))].sort();
+  $('#rmFilter').innerHTML = '<option value="__all__">All RMs</option>' + rms.map(r => `<option value="${r}">${r}</option>`).join('');
+  updateHubOptions();
+  const dates = state.allRows.map(r => r._promise).filter(Boolean).sort((a, b) => a - b);
+  if (dates.length) { $('#dseStart').value = dayKey(dates[0]); $('#dseEnd').value = dayKey(dates[dates.length - 1]); }
+}
+function updateHubOptions() {
+  const territory = $('#territoryFilter').value;
+  const pool = territory === '__all__' ? state.allRows : state.allRows.filter(r => r['LM Territory'] === territory);
+  const hubs = [...new Set(pool.map(r => r['LM Station Name']).filter(Boolean))].sort();
+  const hSel = $('#hubFilter');
+  const prevVal = hSel.value;
+  hSel.innerHTML = '<option value="__all__">All Hubs</option>' + hubs.map(h => `<option value="${h}">${h}</option>`).join('');
+  hSel.value = hubs.includes(prevVal) ? prevVal : '__all__';
+}
+
+function safeCall(fn, label) { try { fn(); } catch (e) { console.error(`[Breach Dashboard] "${label}" failed:`, e); } }
+function renderAll() {
+  safeCall(renderKPIs, 'KPI cards');
+  safeCall(renderHealthStrip, 'Health strip');
+  safeCall(renderTrendChart, 'Trend chart');
+  safeCall(renderPerfTable, 'Performance table');
+  safeCall(() => { $('#scopeCount').textContent = `${fmtNum(state.filteredRows.length)} of ${fmtNum(state.allRows.length)} shipments in view`; }, 'Scope count');
+}
+
+async function ingest1100(rawRows, label) {
+  try {
+    if (rawRows.length > LARGE_FILE_WARN) setProcessingDetail(`Large file (${fmtNum(rawRows.length)} rows) - this will take a bit longer. Keep this tab open.`);
+    const result = await processRows(rawRows, (stage, done, total) => { setProcessingDetail(`${stage}&hellip; ${fmtNum(done)} / ${fmtNum(total)} rows`); });
+    if (!result.rows.length) {
+      const reasons = [];
+      if (result.missingAwbCount) reasons.push(`${result.missingAwbCount} row(s) had no AWB No`);
+      if (result.pendingPickupRemoved) reasons.push(`${result.pendingPickupRemoved} row(s) had no Network Arrival Date`);
+      throw new Error('No shipments remained after processing this file.' + (reasons.length ? ' Likely reason(s): ' + reasons.join('; ') + '.' : ''));
+    }
+    state.allRows = result.rows;
+    state.fileLabel = label;
+    enrichRows();
+    const rmPrunedCount = pruneToRMMapped();
+    if (!state.allRows.length && rmPrunedCount) {
+      throw new Error(`All ${fmtNum(rmPrunedCount)} shipment(s) were removed because none matched the loaded RM Mapping. Check that the RM Mapping file's FACILITY NAME values match this report's LM Station Name values.`);
+    }
+    $('#emptyState').classList.add('hidden');
+    $('#mainContent').classList.remove('hidden');
+    $('#filterBar').classList.remove('hidden');
+    $('#fileNameTag').textContent = label;
+    $('#fileNameTag').classList.remove('hidden');
+
+    const offTableCount = state.allRows.filter(r => r._promise && r._laneInTable === false).length;
+    const notes = [];
+    if (result.dupRemoved > 0) notes.push(`${result.dupRemoved} duplicate row(s) removed`);
+    if (result.missingAwbCount > 0) notes.push(`${result.missingAwbCount} row(s) skipped (no AWB No)`);
+    if (result.pendingPickupRemoved > 0) notes.push(`${result.pendingPickupRemoved} pickup-pending shipment(s) excluded`);
+    if (result.rowErrors > 0) notes.push(`${result.rowErrors} row(s) had unparseable dates`);
+    if (rmPrunedCount > 0) notes.push(`${fmtNum(rmPrunedCount)} shipment(s) removed - no RM mapping match`);
+    if (offTableCount > 0) notes.push(`${offTableCount} shipment(s) on lanes not in the FM cutoff table`);
+    if (state.fraudLookup.size === 0) notes.push(`Fraud Attempt Report not loaded yet - all LM breaches default to Valid (100%) until it's uploaded`);
+    if (state.rmLookup.size === 0) notes.push(`RM Mapping not loaded yet - showing all shipments regardless of RM mapping until it's uploaded`);
+    if (result.totalRaw > VERY_LARGE_FILE_WARN) notes.push(`very large file (${fmtNum(result.totalRaw)} raw rows) - rendering may be slower than usual`);
+    const notice = $('#dataNotice');
+    if (notes.length) { notice.textContent = `${label}: ${fmtNum(state.allRows.length)} shipments in scope. ` + notes.join(' · ') + '.'; notice.classList.remove('hidden'); }
+    else notice.classList.add('hidden');
+
+    populateFilterOptions();
+    applyFilters();
+  } catch (err) {
+    console.error('[Breach Dashboard] ingest failed:', err);
+    $('#parseError').textContent = 'Could not process this file:\n' + err.message;
+    $('#parseError').classList.remove('hidden');
+    $('#mainContent').classList.add('hidden');
+    $('#filterBar').classList.add('hidden');
+    $('#emptyState').classList.remove('hidden');
+  } finally {
+    $('#processingOverlay').classList.add('hidden');
+  }
+}
+
+function ingestFraud(rawRows, label, silent = false) {
+  try {
+    state.fraudLookup = buildFraudLookup(rawRows);
+    if (state.allRows.length) { enrichRows(); applyFilters(); }
+    if (!silent) alert('Fraud Attempt Report loaded: ' + fmtNum(state.fraudLookup.size) + ' unique tracking IDs classified from ' + fmtNum(rawRows.length) + ' attempt rows.');
+  } catch (err) {
+    console.error('[Fraud Report] failed:', err);
+    alert('Could not process the Fraud Attempt Report: ' + err.message);
+  } finally {
+    $('#processingOverlay').classList.add('hidden');
+  }
+}
+
+function ingestRM(rawRows, label, silent = false) {
+  try {
+    const map = new Map();
+    for (const r of rawRows) {
+      const facility = r['FACILITY NAME'] || r['Facility Name'] || r['facility name'];
+      const rm = r['Regional Manager'] || r['regional manager'] || r['RM'];
+      if (!facility) continue;
+      const key = normHubKey(facility);
+      if (rm) map.set(key, String(rm).trim());
+    }
+    state.rmLookup = map;
+    let rmPrunedCount = 0;
+    if (state.allRows.length) {
+      enrichRows();
+      rmPrunedCount = pruneToRMMapped();
+      populateFilterOptions();
+      applyFilters();
+    }
+    const prunedMsg = rmPrunedCount > 0 ? ` ${fmtNum(rmPrunedCount)} shipment(s) with no RM match were removed from the dashboard.` : '';
+    if (!silent) alert('RM Mapping loaded: ' + fmtNum(state.rmLookup.size) + ' hub(s) mapped to a Regional Manager.' + prunedMsg);
+  } catch (err) {
+    console.error('[RM Mapping] failed:', err);
+    alert('Could not process the RM Mapping file: ' + err.message);
+  } finally {
+    $('#processingOverlay').classList.add('hidden');
+  }
+}
+
+/* ======================================================================
+   PASSWORD GATE + FILE WIRING
+   ====================================================================== */
+const REPORT_INPUTS = {
+  input1100: { type: '1100', flag: 'unlocked1100', input: '#fileInput1100' },
+  inputFraud: { type: 'fraud', flag: 'unlockedFraud', input: '#fileInputFraud' },
+  inputRM: { type: 'rm', flag: 'unlockedRM', input: '#fileInputRM' },
+};
+const UPLOAD_CHUNK_BYTES = 3 * 1024 * 1024;
+const uploadPasswords = {};
+let pwPendingTarget = null;
+
+function openPasswordModal(target, title) {
+  pwPendingTarget = target;
+  $('#pwModalTitle').textContent = title;
+  $('#pwInput').value = '';
+  $('#pwError').classList.add('hidden');
+  $('#passwordModal').classList.remove('hidden');
+  setTimeout(() => $('#pwInput').focus(), 50);
+}
+function closePasswordModal() { $('#passwordModal').classList.add('hidden'); pwPendingTarget = null; }
+$('#pwCancel').addEventListener('click', closePasswordModal);
+$('#pwSubmit').addEventListener('click', submitPassword);
+$('#pwInput').addEventListener('keydown', e => { if (e.key === 'Enter') submitPassword(); });
+function submitPassword() {
+  const target = REPORT_INPUTS[pwPendingTarget];
+  const password = $('#pwInput').value;
+  if (target && password) {
+    uploadPasswords[target.type] = password;
+    state[target.flag] = true;
+    closePasswordModal();
+    $(target.input).click();
+  } else {
+    $('#pwError').classList.remove('hidden');
+  }
+}
+function librariesReadyOrWarn() {
+  if (LIBS_READY) return true;
+  $('#libLoadError').textContent = LIBS_ERROR || 'Still loading required libraries - please wait a moment and try again.';
+  $('#libLoadError').classList.remove('hidden');
+  return false;
+}
+
+['unlock1100Btn', 'unlock1100Btn2'].forEach(id => {
+  $('#' + id).addEventListener('click', () => {
+    if (!librariesReadyOrWarn()) return;
+    if (state.unlocked1100) $('#fileInput1100').click(); else openPasswordModal('input1100', 'Upload 1100 Report');
+  });
+});
+$('#unlockFraudBtn').addEventListener('click', () => {
+  if (!librariesReadyOrWarn()) return;
+  if (state.unlockedFraud) $('#fileInputFraud').click(); else openPasswordModal('inputFraud', 'Upload Fraud Attempt Report');
+});
+$('#unlockRMBtn').addEventListener('click', () => {
+  if (!librariesReadyOrWarn()) return;
+  if (state.unlockedRM) $('#fileInputRM').click(); else openPasswordModal('inputRM', 'Upload RM Mapping');
+});
+
+function readGenericFile(file, onRows, silent = false) {
+  return new Promise(resolve => {
+    $('#parseError').classList.add('hidden');
+    $('#libLoadError').classList.add('hidden');
+    $('#processingOverlay').classList.remove('hidden');
+    const isCSV = /\.csv$/i.test(file.name);
+    const reader = new FileReader();
+    reader.onload = ev => {
+      setTimeout(async () => {
+        try {
+          const parsed = isCSV ? loadCSV(ev.target.result) : loadWorkbook(ev.target.result);
+          await onRows(parsed.rows, file.name, silent);
+          resolve(true);
+        } catch (err) {
+          console.error('[Breach Dashboard] file read failed:', err);
+          $('#processingOverlay').classList.add('hidden');
+          alert('Could not process this file: ' + (err.message || String(err)));
+          resolve(false);
+        }
+      }, 30);
+    };
+    reader.onerror = () => {
+      $('#processingOverlay').classList.add('hidden');
+      alert('Could not read this file from disk.');
+      resolve(false);
+    };
+    if (isCSV) reader.readAsText(file); else reader.readAsArrayBuffer(file);
+  });
+}
+
+async function responseError(response, fallback) {
+  try {
+    const body = await response.json();
+    return body.error || fallback;
+  } catch (_) {
+    return fallback;
+  }
+}
+
+async function saveSharedReport(type, file, password) {
+  if (!password) throw new Error('Enter the upload password again.');
+  const parts = Math.ceil(file.size / UPLOAD_CHUNK_BYTES);
+  for (let part = 0; part < parts; part += 1) {
+    setProcessingDetail('Publishing shared report... part ' + (part + 1) + ' of ' + parts);
+    const url = new URL('/.netlify/functions/save-report', location.origin);
+    url.searchParams.set('type', type);
+    url.searchParams.set('action', 'part');
+    url.searchParams.set('part', String(part));
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream', 'X-Upload-Password': password },
+      body: file.slice(part * UPLOAD_CHUNK_BYTES, Math.min(file.size, (part + 1) * UPLOAD_CHUNK_BYTES)),
+    });
+    if (!response.ok) throw new Error(await responseError(response, 'Could not publish upload part.'));
+  }
+  const finishUrl = new URL('/.netlify/functions/save-report', location.origin);
+  finishUrl.searchParams.set('type', type);
+  finishUrl.searchParams.set('action', 'finalize');
+  finishUrl.searchParams.set('parts', String(parts));
+  finishUrl.searchParams.set('sizeBytes', String(file.size));
+  finishUrl.searchParams.set('filename', file.name);
+  const finish = await fetch(finishUrl, { method: 'POST', headers: { 'X-Upload-Password': password } });
+  if (!finish.ok) throw new Error(await responseError(finish, 'Could not finalize the shared report.'));
+  return finish.json();
+}
+
+async function handleSelectedReport(type, file, onRows) {
+  const parsed = await readGenericFile(file, onRows);
+  if (!parsed) return;
+  $('#processingOverlay').classList.remove('hidden');
+  try {
+    await saveSharedReport(type, file, uploadPasswords[type]);
+    alert(file.name + ' is now stored securely and visible to everyone who opens this dashboard.');
+  } catch (err) {
+    const target = Object.values(REPORT_INPUTS).find(item => item.type === type);
+    if (target) state[target.flag] = false;
+    alert('Loaded locally, but could not publish for other viewers: ' + (err.message || String(err)));
+  } finally {
+    $('#processingOverlay').classList.add('hidden');
+  }
+}
+
+async function fetchSharedFile(type, manifest) {
+  const chunks = [];
+  for (let part = 0; part < manifest.parts; part += 1) {
+    setProcessingDetail('Loading shared report... part ' + (part + 1) + ' of ' + manifest.parts);
+    const url = new URL('/.netlify/functions/get-report', location.origin);
+    url.searchParams.set('type', type);
+    url.searchParams.set('part', String(part));
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) throw new Error(await responseError(response, 'Could not load shared report part.'));
+    chunks.push(await response.blob());
+  }
+  return new File(chunks, manifest.filename || ('shared-' + type), { type: 'application/octet-stream' });
+}
+
+async function loadSharedReports() {
+  try {
+    const response = await fetch('/.netlify/functions/report-status', { cache: 'no-store' });
+    if (!response.ok) throw new Error(await responseError(response, 'Could not check shared reports.'));
+    const status = await response.json();
+    const configs = [
+      { type: 'fraud', ingest: ingestFraud },
+      { type: 'rm', ingest: ingestRM },
+      { type: '1100', ingest: ingest1100 },
+    ];
+    for (const config of configs) {
+      const manifest = status[config.type];
+      if (!manifest) continue;
+      const file = await fetchSharedFile(config.type, manifest);
+      await readGenericFile(file, config.ingest, true);
+    }
+  } catch (err) {
+    console.error('[Shared reports] failed:', err);
+    $('#libLoadError').textContent = 'Shared reports could not be loaded: ' + (err.message || String(err));
+    $('#libLoadError').classList.remove('hidden');
+    $('#processingOverlay').classList.add('hidden');
+  }
+}
+
+$('#fileInput1100').addEventListener('change', async e => { const file = e.target.files[0]; if (file) await handleSelectedReport('1100', file, ingest1100); e.target.value = ''; });
+$('#fileInputFraud').addEventListener('change', async e => { const file = e.target.files[0]; if (file) await handleSelectedReport('fraud', file, ingestFraud); e.target.value = ''; });
+$('#fileInputRM').addEventListener('change', async e => { const file = e.target.files[0]; if (file) await handleSelectedReport('rm', file, ingestRM); e.target.value = ''; });
+
+window.addEventListener('load', async () => {
+  for (let attempt = 0; attempt < 50 && !LIBS_READY && !LIBS_ERROR; attempt += 1) await new Promise(resolve => setTimeout(resolve, 200));
+  if (LIBS_READY) await loadSharedReports();
+});
+
+function loadSample() {
+  if (!librariesReadyOrWarn()) return;
+  $('#parseError').classList.add('hidden');
+  $('#libLoadError').classList.add('hidden');
+  $('#processingOverlay').classList.remove('hidden');
+  setTimeout(() => ingest1100(generateSampleRows(), 'sample_data.xlsx (synthetic)'), 30);
+}
+$('#sampleBtn').addEventListener('click', loadSample);
+$('#sampleBtn2').addEventListener('click', loadSample);
+
+/* ======================================================================
+   FILTER WIRING
+   ====================================================================== */
+$('#dseStart').addEventListener('change', () => { clearQuickActive(); applyFilters(); });
+$('#dseEnd').addEventListener('change', () => { clearQuickActive(); applyFilters(); });
+$('#territoryFilter').addEventListener('change', () => { updateHubOptions(); applyFilters(); });
+$('#hubFilter').addEventListener('change', applyFilters);
+$('#rmFilter').addEventListener('change', applyFilters);
+$('#tableSearch').addEventListener('input', () => { state.page = 1; renderPerfTable(); });
+$('#kpiPicker').addEventListener('change', renderTrendChart);
+$('#resetFilters').addEventListener('click', () => {
+  $('#territoryFilter').value = '__all__'; updateHubOptions(); $('#hubFilter').value = '__all__'; $('#rmFilter').value = '__all__';
+  $('#tableSearch').value = ''; clearQuickActive();
+  const dates = state.allRows.map(r => r._promise).filter(Boolean).sort((a, b) => a - b);
+  if (dates.length) { $('#dseStart').value = dayKey(dates[0]); $('#dseEnd').value = dayKey(dates[dates.length - 1]); }
+  applyFilters();
+});
+function clearQuickActive() { document.querySelectorAll('.quickbtn').forEach(b => b.classList.remove('active')); }
+document.querySelectorAll('.quickbtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    clearQuickActive(); btn.classList.add('active');
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    let start, end;
+    if (btn.dataset.quick === 'today') { start = new Date(today); end = new Date(today); }
+    else if (btn.dataset.quick === '7d') { end = new Date(today); end.setDate(end.getDate() - 1); start = new Date(end); start.setDate(start.getDate() - 6); }
+    else if (btn.dataset.quick === 'mtd') { end = new Date(today); start = new Date(today.getFullYear(), today.getMonth(), 1); }
+    $('#dseStart').value = dayKey(start); $('#dseEnd').value = dayKey(end);
+    applyFilters();
+  });
+});
+document.querySelectorAll('.th-sort').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.key;
+    if (state.sortKey === key) state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc'; else { state.sortKey = key; state.sortDir = 'desc'; }
+    renderPerfTable();
+  });
+});
+$('#prevPage').addEventListener('click', () => { if (state.page > 1) { state.page--; renderPerfTable(); } });
+$('#nextPage').addEventListener('click', () => { state.page++; renderPerfTable(); });
+
+function setTableLevel(level) {
+  state.tableLevel = level; state.page = 1;
+  const isTerr = level === 'territory';
+  $('#levelTerritoryBtn').className = 'px-3 py-1.5 rounded-md font-medium transition ' + (isTerr ? 'bg-brand text-white' : 'text-mute hover:text-ink');
+  $('#levelHubBtn').className = 'px-3 py-1.5 rounded-md font-medium transition ' + (!isTerr ? 'bg-brand text-white' : 'text-mute hover:text-ink');
+  $('#tableTitle').textContent = isTerr ? 'Territory performance' : 'Hub performance';
+  $('#colNamePrimary').textContent = isTerr ? 'Territory' : 'Hub';
+  renderPerfTable();
+}
+$('#levelTerritoryBtn').addEventListener('click', () => setTableLevel('territory'));
+$('#levelHubBtn').addEventListener('click', () => setTableLevel('hub'));
+$('#subtotalsToggle').addEventListener('change', () => { state.page = 1; renderPerfTable(); });
+
+/* ======================================================================
+   EXCEL EXPORT - replicates exactly what's on screen: same columns, same
+   current sort/search/subtotal state, same conditional-formatting colors
+   (via the shared CF_RULES also used for the on-screen table). Exports
+   the FULL filtered set, not just the current page, since an export
+   should contain everything in scope.
+   ====================================================================== */
+function getExportColumns(isHub) {
+  const cols = [{ header: isHub ? 'Hub' : 'Territory', key: 'name', pct: false }];
+  if (isHub) cols.push({ header: 'Territory', key: 'territory', pct: false });
+  cols.push(
+    { header: 'RM', key: 'rm', pct: false },
+    { header: 'Count', key: 'count', pct: false },
+    { header: 'AOT%', key: 'aot', pct: true, cf: 'aot' },
+    { header: 'DOT+ROT%', key: 'dotrot', pct: true, cf: 'dotrot' },
+    { header: 'DOT%', key: 'dot', pct: true, cf: 'dot' },
+    { header: 'ROT%', key: 'rot', pct: true },
+    { header: 'DSR%', key: 'dsr', pct: true, cf: 'dsr' },
+    { header: 'FDDS%', key: 'fdds', pct: true, cf: 'fdds' },
+    { header: 'FM%', key: 'fmPct', pct: true, cf: 'fmPct' },
+    { header: 'MM%', key: 'mmPct', pct: true, cf: 'mmPct' },
+    { header: 'LM%', key: 'lmPct', pct: true, cf: 'lmPct' },
+    { header: 'Valid LM%', key: 'validLm', pct: true, cf: 'validLm' },
+    { header: 'Invalid LM%', key: 'invalidLm', pct: true, cf: 'invalidLm' },
+  );
+  return cols;
+}
+
+async function exportTableToExcel() {
+  const btn = $('#exportExcelBtn');
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = 'Preparing&hellip;';
+  try {
+    const ok = await ensureExcelJSLoaded();
+    if (!ok) { alert('Could not load the Excel export library from any CDN source. Check your connection and try again.'); return; }
+    if (!state.allRows.length) { alert('Nothing to export yet - upload the 1100 Report first.'); return; }
+
+    const isHub = state.tableLevel === 'hub';
+    const cols = getExportColumns(isHub);
+    const showSubtotals = $('#subtotalsToggle').checked;
+
+    // Rebuild exactly what the table is currently showing (same filter/search/sort),
+    // but the FULL set rather than just the current page.
+    let data = buildPerformanceRows();
+    const search = $('#tableSearch').value.trim().toLowerCase();
+    if (search) data = data.filter(d => d.name.toLowerCase().includes(search) || (d.rm && d.rm.toLowerCase().includes(search)));
+    data.sort((a, b) => {
+      const dir = state.sortDir === 'asc' ? 1 : -1;
+      const av = a[state.sortKey], bv = b[state.sortKey];
+      if (typeof av === 'string') return av.localeCompare(bv) * dir;
+      return ((av ?? -1) - (bv ?? -1)) * dir;
+    });
+
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'Network Control Dashboard';
+    wb.created = new Date();
+    const ws = wb.addWorksheet(isHub ? 'Hub Performance' : 'Territory Performance');
+
+    const headerRow = ws.addRow(cols.map(c => c.header));
+    headerRow.eachCell(cell => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+    });
+
+    function addDataRow(d, bold) {
+      const row = ws.addRow(cols.map(c => d[c.key] ?? null));
+      cols.forEach((c, i) => {
+        const cell = row.getCell(i + 1);
+        if (c.pct) {
+          cell.numFmt = '0%';
+          cell.alignment = { horizontal: 'right' };
+          const hex = c.cf && CF_RULES[c.cf] ? CF_RULES[c.cf](d[c.key]) : null;
+          if (hex) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + hex } };
+        } else if (c.key === 'count') {
+          cell.numFmt = '#,##0';
+          cell.alignment = { horizontal: 'right' };
+        }
+        if (bold) cell.font = Object.assign({}, cell.font, { bold: true });
+      });
+    }
+
+    if (showSubtotals && data.length) {
+      const byRm = new Map();
+      for (const d of data) { const key = d.rm || '\u2014'; if (!byRm.has(key)) byRm.set(key, []); byRm.get(key).push(d); }
+      const rmNames = Array.from(byRm.keys()).sort((a, b) => a.localeCompare(b));
+      for (const rmName of rmNames) {
+        const group = byRm.get(rmName);
+        for (const d of group) addDataRow(d, false);
+        const subtotal = buildSummaryRow(group.flatMap(d => d._rows), `${rmName} \u2014 Sub-total`, rmName, isHub ? '' : null);
+        if (subtotal) addDataRow(subtotal, true);
+      }
+    } else {
+      for (const d of data) addDataRow(d, false);
+    }
+
+    if (data.length) {
+      const grandTotal = buildSummaryRow(state.filteredRows, 'Grand Total', 'All RMs', isHub ? 'All Territories' : null);
+      if (grandTotal) addDataRow(grandTotal, true);
+    }
+
+    cols.forEach((c, i) => { ws.getColumn(i + 1).width = i === 0 ? 26 : (c.key === 'rm' ? 20 : 12); });
+    ws.views = [{ state: 'frozen', ySplit: 1 }];
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `network_control_${isHub ? 'hub' : 'territory'}_performance_${stamp}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error('[Excel Export] failed:', err);
+    alert('Could not generate the Excel file: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.innerHTML = originalHtml;
+  }
+}
+$('#exportExcelBtn').addEventListener('click', exportTableToExcel);
+
+/* ======================================================================
+   TAB SWITCHING (Dashboard / Rationale)
+   ====================================================================== */
+function formatCutoff(totalSeconds) {
+  let h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const ap = h >= 12 ? 'PM' : 'AM';
+  let h12 = h % 12; if (h12 === 0) h12 = 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${ap}`;
+}
+function toTitleCase(placeName) {
+  if (placeName === 'DELHI NCR') return 'Delhi NCR';
+  return placeName.split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
+}
+function renderRationaleLaneTable() {
+  const entries = Object.entries(LANE_SLA).map(([key, secs]) => {
+    const [fm, lm] = key.split('|');
+    return { label: `${toTitleCase(fm)} \u2192 ${toTitleCase(lm)}`, cutoff: formatCutoff(secs) };
+  });
+  entries.sort((a, b) => a.label.localeCompare(b.label));
+  const rowsHtml = [];
+  for (let i = 0; i < entries.length; i += 2) {
+    const a = entries[i], b = entries[i + 1];
+    rowsHtml.push(`<tr>
+        <td class="py-1.5 pr-4">${a.label}</td><td class="py-1.5 pr-4 font-mono">${a.cutoff}</td>
+        ${b ? `<td class="py-1.5 pr-4">${b.label}</td><td class="py-1.5 font-mono">${b.cutoff}</td>` : '<td></td><td></td>'}
+      </tr>`);
+  }
+  $('#rationaleLaneTable').innerHTML = rowsHtml.join('');
+}
+function setActiveTab(tab) {
+  const isDash = tab === 'dashboard';
+  $('#dashboardTabContent').classList.toggle('hidden', !isDash);
+  $('#rationaleTabContent').classList.toggle('hidden', isDash);
+  $('#tabDashboardBtn').className = 'px-4 py-1.5 rounded-md font-medium transition ' + (isDash ? 'bg-brand text-white' : 'text-mute hover:text-ink');
+  $('#tabRationaleBtn').className = 'px-4 py-1.5 rounded-md font-medium transition ' + (!isDash ? 'bg-brand text-white' : 'text-mute hover:text-ink');
+  if (!isDash) renderRationaleLaneTable();
+}
+$('#tabDashboardBtn').addEventListener('click', () => setActiveTab('dashboard'));
+$('#tabRationaleBtn').addEventListener('click', () => setActiveTab('rationale'));
+</script>
+</body>
+</html>
