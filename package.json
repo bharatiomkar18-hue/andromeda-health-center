@@ -2,8 +2,12 @@
   "name": "andromeda-health-center",
   "version": "1.0.0",
   "private": true,
-  "description": "Network Control - FM/MM/LM breach monitoring dashboard with shared, site-wide data storage via Netlify Blobs.",
+  "type": "module",
+  "description": "FM/MM/LM breach monitoring dashboard with shared Netlify Blobs storage.",
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
-    "@netlify/blobs": "^8.1.0"
+    "@netlify/blobs": "^8.2.0"
   }
 }
