@@ -107,7 +107,7 @@
 <div id="filterBar" class="hidden sticky top-[57px] z-30 border-b border-edge bg-surface2/90 backdrop-blur">
   <div class="max-w-[1760px] mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap items-center gap-2">
     <div class="flex items-center gap-1 bg-surface border border-edge rounded-lg p-0.5 text-[11px]">
-      <button data-quick="today" class="quickbtn px-2.5 py-1.5 rounded-md font-medium text-mute hover:text-ink">Today</button>
+      <button data-quick="today" class="quickbtn px-2.5 py-1.5 rounded-md font-medium text-mute hover:text-ink">Today</button><button data-quick="d1" class="quickbtn px-2.5 py-1.5 rounded-md font-medium text-mute hover:text-ink">D-1</button>
       <button data-quick="7d" class="quickbtn px-2.5 py-1.5 rounded-md font-medium text-mute hover:text-ink">Last 7 Days</button>
       <button data-quick="mtd" class="quickbtn px-2.5 py-1.5 rounded-md font-medium text-mute hover:text-ink">MTD</button>
     </div>
@@ -162,7 +162,7 @@
         <h3 id="drillTitle" class="font-display font-semibold text-base">Drill-down</h3>
         <p id="drillSubtitle" class="text-xs text-mute mt-0.5"></p>
       </div>
-      <button id="drillClose" class="w-8 h-8 rounded-lg hover:bg-surface2 flex items-center justify-center text-mute hover:text-ink transition">
+      <button id="drillExportBtn" class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-edge text-mute hover:text-ink hover:border-brand/50 transition">Export to Excel</button><button id="drillClose" class="w-8 h-8 rounded-lg hover:bg-surface2 flex items-center justify-center text-mute hover:text-ink transition">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
     </div>
@@ -326,7 +326,7 @@
           <input type="checkbox" id="subtotalsToggle" class="accent-brand">
           Sub-totals by RM
         </label>
-        <button id="exportExcelBtn" class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-edge text-mute hover:text-ink hover:border-brand/50 transition">
+        <select id="tableRMFilter" class="text-xs bg-surface2 border border-edge rounded-lg px-2.5 py-1.5 outline-none text-ink max-w-[150px]"><option value="__all__">All RMs</option></select><button id="exportExcelBtn" class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-edge text-mute hover:text-ink hover:border-brand/50 transition">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export to Excel
         </button>
@@ -1291,7 +1291,7 @@ function statusColor(pct) {
   return 'text-ontime';
 }
 
-let currentPerfRows = [];
+let currentPerfRows = []; let currentDrilldown = null;
 
 /* ======================================================================
    CONDITIONAL FORMATTING - shared by the on-screen table AND the Excel
@@ -1421,7 +1421,7 @@ function renderPerfTable() {
 
 function openDrilldown(rowData) {
   const rows = rowData._rows;
-  $('#drillTitle').textContent = rowData.name;
+  currentDrilldown = { rows: rowData._rows, name: rowData.name, rm: rowData.rm, territory: rowData.territory }; $('#drillTitle').textContent = rowData.name;
   $('#drillSubtitle').textContent = `${fmtNum(rows.length)} shipments &middot; RM: ${rowData.rm}` + (rowData.territory ? ` &middot; Territory: ${rowData.territory}` : '');
   const bucketRank = { 'FM': 0, 'MM': 1, 'LM': 2, 'On Time': 3, 'No Promise Date Generated': 4 };
   const sorted = [...rows].sort((a, b) => (bucketRank[a._attribution] ?? 9) - (bucketRank[b._attribution] ?? 9));
@@ -1456,7 +1456,7 @@ function populateFilterOptions() {
   const territories = [...new Set(state.allRows.map(r => r['LM Territory']).filter(Boolean))].sort();
   $('#territoryFilter').innerHTML = '<option value="__all__">All Territories</option>' + territories.map(t => `<option value="${t}">${t}</option>`).join('');
   const rms = [...new Set(state.allRows.map(r => r._rm).filter(Boolean))].sort();
-  $('#rmFilter').innerHTML = '<option value="__all__">All RMs</option>' + rms.map(r => `<option value="${r}">${r}</option>`).join('');
+  const rmOptionsHtml = '<option value="__all__">All RMs</option>' + rms.map(r => `<option value="${r}">${r}</option>`).join(''); $('#rmFilter').innerHTML = rmOptionsHtml; $('#tableRMFilter').innerHTML = rmOptionsHtml;
   updateHubOptions();
   const dates = state.allRows.map(r => r._promise).filter(Boolean).sort((a, b) => a - b);
   if (dates.length) { $('#dseStart').value = dayKey(dates[0]); $('#dseEnd').value = dayKey(dates[dates.length - 1]); }
@@ -1777,11 +1777,11 @@ $('#dseStart').addEventListener('change', () => { clearQuickActive(); applyFilte
 $('#dseEnd').addEventListener('change', () => { clearQuickActive(); applyFilters(); });
 $('#territoryFilter').addEventListener('change', () => { updateHubOptions(); applyFilters(); });
 $('#hubFilter').addEventListener('change', applyFilters);
-$('#rmFilter').addEventListener('change', applyFilters);
+$('#rmFilter').addEventListener('change', () => { $('#tableRMFilter').value = $('#rmFilter').value; applyFilters(); }); $('#tableRMFilter').addEventListener('change', () => { $('#rmFilter').value = $('#tableRMFilter').value; applyFilters(); });
 $('#tableSearch').addEventListener('input', () => { state.page = 1; renderPerfTable(); });
 $('#kpiPicker').addEventListener('change', renderTrendChart);
 $('#resetFilters').addEventListener('click', () => {
-  $('#territoryFilter').value = '__all__'; updateHubOptions(); $('#hubFilter').value = '__all__'; $('#rmFilter').value = '__all__';
+  $('#territoryFilter').value = '__all__'; updateHubOptions(); $('#hubFilter').value = '__all__'; $('#rmFilter').value = '__all__'; $('#tableRMFilter').value = '__all__';
   $('#tableSearch').value = ''; clearQuickActive();
   const dates = state.allRows.map(r => r._promise).filter(Boolean).sort((a, b) => a - b);
   if (dates.length) { $('#dseStart').value = dayKey(dates[0]); $('#dseEnd').value = dayKey(dates[dates.length - 1]); }
@@ -1793,7 +1793,7 @@ document.querySelectorAll('.quickbtn').forEach(btn => {
     clearQuickActive(); btn.classList.add('active');
     const today = new Date(); today.setHours(0, 0, 0, 0);
     let start, end;
-    if (btn.dataset.quick === 'today') { start = new Date(today); end = new Date(today); }
+    if (btn.dataset.quick === 'today') { start = new Date(today); end = new Date(today); } else if (btn.dataset.quick === 'd1') { start = new Date(today); start.setDate(start.getDate() - 1); end = new Date(start); }
     else if (btn.dataset.quick === '7d') { end = new Date(today); end.setDate(end.getDate() - 1); start = new Date(end); start.setDate(start.getDate() - 6); }
     else if (btn.dataset.quick === 'mtd') { end = new Date(today); start = new Date(today.getFullYear(), today.getMonth(), 1); }
     $('#dseStart').value = dayKey(start); $('#dseEnd').value = dayKey(end);
@@ -1945,7 +1945,7 @@ async function exportTableToExcel() {
     btn.disabled = false; btn.innerHTML = originalHtml;
   }
 }
-$('#exportExcelBtn').addEventListener('click', exportTableToExcel);
+$('#exportExcelBtn').addEventListener('click', exportTableToExcel); async function exportDrilldownToExcel() { if (!currentDrilldown || !currentDrilldown.rows.length) { alert('Nothing to export - open a drill-down first.'); return; } const btn = $('#drillExportBtn'); const originalHtml = btn.innerHTML; btn.disabled = true; btn.innerHTML = 'Preparing...'; try { const ok = await ensureExcelJSLoaded(); if (!ok) { alert('Could not load the Excel export library from any CDN source. Check your connection and try again.'); return; } const rows = currentDrilldown.rows; const name = currentDrilldown.name; const bucketRank = { 'FM': 0, 'MM': 1, 'LM': 2, 'On Time': 3, 'No Promise Date Generated': 4 }; const sorted = [...rows].sort((a, b) => (bucketRank[a._attribution] ?? 9) - (bucketRank[b._attribution] ?? 9)); const wb = new ExcelJS.Workbook(); wb.creator = 'Network Control Dashboard'; wb.created = new Date(); const ws = wb.addWorksheet('Drill-down'); const cols = ['AWB No', 'Status', 'Bucket', 'Detail Tag', 'Hub', 'Territory', 'RM', 'DSE']; const headerRow = ws.addRow(cols); headerRow.eachCell(cell => { cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }; cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } }; cell.alignment = { vertical: 'middle', horizontal: 'center' }; }); for (const r of sorted) { const bucket = r._attribution === 'LM' && r._lmFraudBucket ? ('LM - ' + r._lmFraudBucket) : (r._attribution || ''); const row = ws.addRow([r['AWB No'] || '', r['Status'] || '', bucket, r._lmFraudTag || '', r['LM Station Name'] || '', r['LM Territory'] || '', r._rm || '', r._promise ? fmtDay(r._promise) : '']); const bucketCell = row.getCell(3); const fillMap = { 'FM': 'FDE9D9', 'MM': 'E5DBF7', 'LM - Valid': 'C6EFCE', 'LM - Invalid': 'FFC7CE', 'On Time': 'D9F2ED' }; const hex = fillMap[bucket]; if (hex) bucketCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + hex } }; } ws.getColumn(1).width = 20; ws.getColumn(2).width = 14; ws.getColumn(3).width = 16; ws.getColumn(4).width = 30; ws.getColumn(5).width = 22; ws.getColumn(6).width = 16; ws.getColumn(7).width = 18; ws.getColumn(8).width = 12; ws.views = [{ state: 'frozen', ySplit: 1 }]; const buf = await wb.xlsx.writeBuffer(); const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); const stamp = new Date().toISOString().slice(0, 10); const safeName = String(name || 'drilldown').replace(/[^a-z0-9]+/gi, '_').toLowerCase(); a.href = url; a.download = 'drilldown_' + safeName + '_' + stamp + '.xlsx'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); } catch (err) { console.error('[Drilldown Export] failed:', err); alert('Could not generate the Excel file: ' + err.message); } finally { btn.disabled = false; btn.innerHTML = originalHtml; } } $('#drillExportBtn').addEventListener('click', exportDrilldownToExcel);
 
 /* ======================================================================
    TAB SWITCHING (Dashboard / Rationale)
